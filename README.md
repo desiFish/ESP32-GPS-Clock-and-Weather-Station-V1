@@ -95,39 +95,44 @@
 </div>
 
 <h2>📸 Gallery</h2>
-<div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
-    <div>
-      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x1.jpg" 
+<div align="center">
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 20px;">
+    <!-- First Row - 3 images -->
+    <div style="flex: 0 1 30%; min-width: 250px;">
+      <img src="resources/images/x1.jpg" 
            alt="Front View" 
-           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>Front View 📱</em></p>
-    </div>
-    <div>
-      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x2.jpg" 
-           alt="Inside View" 
-           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+           width="100%"
+           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
       <p><em>Internal Components 🔧</em></p>
     </div>
-    <div>
-      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x3.jpg" 
-           alt="Display Demo" 
-           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>Display Demo 🖥️</em></p>
+    <div style="flex: 0 1 30%; min-width: 250px;">
+      <img src="resources/images/x2.jpg" 
+           alt="Inside View" 
+           width="100%"
+           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>PVC Case 🎨 and Back View</em></p>
     </div>
-  </div>
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 66%;">
-    <div>
-      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x4.jpg" 
+    <div style="flex: 0 1 30%; min-width: 250px;">
+      <img src="resources/images/x3.jpg" 
+           alt="Display Demo" 
+           width="100%"
+           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>Front View 📱</em></p>
+    </div>
+    <!-- Second Row - 2 images -->
+    <div style="flex: 0 1 30%; min-width: 250px;">
+      <img src="resources/images/x4.jpg" 
            alt="PCB View" 
-           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+           width="100%"
+           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
       <p><em>PCB Layout 🔌</em></p>
     </div>
-    <div>
-      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x5.jpg" 
+    <div style="flex: 0 1 30%; min-width: 250px;">
+      <img src="resources/images/x5.jpg" 
            alt="Case Design" 
-           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>3D Printed Case 🎨</em></p>
+           width="100%"
+           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>Internal 2 🔌</em></p>
     </div>
   </div>
 </div>
