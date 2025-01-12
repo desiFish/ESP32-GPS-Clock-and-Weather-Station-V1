@@ -66,7 +66,6 @@
   <strong>❌ DO NOT USE AHT25 SENSOR!</strong><br>
   Due to significant accuracy issues, we recommend using BME280/BMP280/TMP117 instead.
 </div>
-<details>
 <summary><strong>🔋 GPS Battery Modification</strong></summary>
 
 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px;">
@@ -113,7 +112,6 @@
     </ol>
   </div>
 </div>
-</details>
 
 <h2>📊 Schematics</h2>
 <div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
