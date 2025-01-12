@@ -73,7 +73,8 @@
     <br>
     <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png" 
          alt="GPS Clock Schematic" 
-         style="max-width: 50%; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+         width="300px"
+         style="border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <p><em>ESP32 GPS Clock Circuit Diagram</em></p>
 
   <table>
