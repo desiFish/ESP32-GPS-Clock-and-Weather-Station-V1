@@ -1,9 +1,14 @@
 <div align="center">
   <h1>🌍 ESP32 GPS Clock & Weather Station</h1>
   <p>
-    <img src="https://img.shields.io/badge/license-GPL%20v3-blue.svg" alt="License">
+    <a href="/LICENSE"><img src="https://img.shields.io/github/license/desiFish/ESP32-GPS-CLOCK-V1" alt="License"></a>
     <img src="https://img.shields.io/badge/platform-ESP32-green.svg" alt="Platform">
     <img src="https://img.shields.io/badge/Arduino-Compatible-yellow.svg" alt="Arduino">
+  </p>
+  <p>
+    <img src="https://img.shields.io/badge/status-active-success.svg" alt="Status">
+    <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/issues"><img src="https://img.shields.io/github/issues/desiFish/ESP32-GPS-CLOCK-V1.svg" alt="GitHub Issues"></a>
+    <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/releases"><img src="https://img.shields.io/github/v/release/desiFish/ESP32-GPS-CLOCK-V1" alt="Release"></a>
   </p>
   <p><em>A smart clock that syncs with GPS satellites and monitors environmental conditions! 🛰️</em></p>
 </div>
@@ -116,5 +121,5 @@
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by the ESP32 community</sub>
+  <sub>Built with ❤️</sub>
 </div>
