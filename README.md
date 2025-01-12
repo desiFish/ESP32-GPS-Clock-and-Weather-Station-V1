@@ -96,45 +96,50 @@
 
 <h2>📸 Gallery</h2>
 <div align="center">
-  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 20px;">
-    <!-- First Row - 3 images -->
-    <div style="flex: 0 1 30%; min-width: 250px;">
-      <img src="resources/images/x1.jpg" 
-           alt="Front View" 
-           width="100%"
-           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>Internal Components 🔧</em></p>
-    </div>
-    <div style="flex: 0 1 30%; min-width: 250px;">
-      <img src="resources/images/x2.jpg" 
-           alt="Inside View" 
-           width="100%"
-           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>PVC Case 🎨 and Back View</em></p>
-    </div>
-    <div style="flex: 0 1 30%; min-width: 250px;">
-      <img src="resources/images/x3.jpg" 
-           alt="Display Demo" 
-           width="100%"
-           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>Front View 📱</em></p>
-    </div>
-    <!-- Second Row - 2 images -->
-    <div style="flex: 0 1 30%; min-width: 250px;">
-      <img src="resources/images/x4.jpg" 
-           alt="PCB View" 
-           width="100%"
-           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>PCB Layout 🔌</em></p>
-    </div>
-    <div style="flex: 0 1 30%; min-width: 250px;">
-      <img src="resources/images/x5.jpg" 
-           alt="Case Design" 
-           width="100%"
-           style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-      <p><em>Internal 2 🔌</em></p>
-    </div>
-  </div>
+  <table>
+    <tr>
+      <!-- First Row -->
+      <td width="33%">
+        <img src="resources/images/x1.jpg" 
+             alt="Internal Components" 
+             width="100%"
+             style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <p><em>Internal Components 🔧</em></p>
+      </td>
+      <td width="33%">
+        <img src="resources/images/x2.jpg" 
+             alt="PVC Case" 
+             width="100%"
+             style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <p><em>PVC Case 🎨</em></p>
+      </td>
+      <td width="33%">
+        <img src="resources/images/x3.jpg" 
+             alt="Front View" 
+             width="100%"
+             style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <p><em>Front View 📱</em></p>
+      </td>
+    </tr>
+    <tr>
+      <!-- Second Row -->
+      <td width="33%">
+        <img src="resources/images/x4.jpg" 
+             alt="PCB Layout" 
+             width="100%"
+             style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <p><em>PCB Layout 🔌</em></p>
+      </td>
+      <td width="33%">
+        <img src="resources/images/x5.jpg" 
+             alt="Internal View 2" 
+             width="100%"
+             style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <p><em>Internal View 2 🔌</em></p>
+      </td>
+      <td width="33%"></td>
+    </tr>
+  </table>
 </div>
 
 <h2>📜 License</h2>
