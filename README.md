@@ -67,6 +67,71 @@
   Due to significant accuracy issues, we recommend using BME280/BMP280/TMP117 instead.
 </div>
 
+<h2>📊 Schematics</h2>
+<div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+  <details>
+    <summary><strong>👀 Click to View Circuit Diagram</strong></summary>
+    <br>
+    <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png" 
+         alt="GPS Clock Schematic" 
+         style="max-width: 100%; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <p><em>ESP32 GPS Clock Circuit Diagram</em></p>
+  </details>
+
+  <table>
+    <tr>
+      <td>📝 Format</td>
+      <td>High-resolution PNG</td>
+    </tr>
+    <tr>
+      <td>🔍 Zoom</td>
+      <td>Click image to enlarge</td>
+    </tr>
+    <tr>
+      <td>💾 Download</td>
+      <td><a href="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png">Full Resolution</a></td>
+    </tr>
+  </table>
+</div>
+
+<h2>📸 Gallery</h2>
+<div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+    <div>
+      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x1.jpg" 
+           alt="Front View" 
+           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>Front View 📱</em></p>
+    </div>
+    <div>
+      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x2.jpg" 
+           alt="Inside View" 
+           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>Internal Components 🔧</em></p>
+    </div>
+    <div>
+      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x3.jpg" 
+           alt="Display Demo" 
+           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>Display Demo 🖥️</em></p>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 66%;">
+    <div>
+      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x4.jpg" 
+           alt="PCB View" 
+           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>PCB Layout 🔌</em></p>
+    </div>
+    <div>
+      <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/images/x5.jpg" 
+           alt="Case Design" 
+           style="width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p><em>3D Printed Case 🎨</em></p>
+    </div>
+  </div>
+</div>
+
 <h2>📜 License</h2>
 <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px;">
 <h3>GNU General Public License v3.0</h3>
