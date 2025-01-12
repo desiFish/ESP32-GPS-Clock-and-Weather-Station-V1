@@ -69,7 +69,7 @@
 
 <h2>📊 Schematics</h2>
 <div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    <summary><strong>👀 Circuit Diagram</strong></summary>
+    ><strong>👀 Circuit Diagram</strong>
     <br>
     <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png" 
          alt="GPS Clock Schematic" 
