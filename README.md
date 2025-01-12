@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="resources/images/logo.png" alt="Project Logo" width="150" style="margin-bottom: 20px;">
-  
+<div align="center">  
   # 🌟 ESP32 GPS Clock & Weather Station
 
   [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=for-the-badge)](LICENSE)
@@ -268,8 +266,7 @@
 ---
 
 <div align="center" style="margin-top: 50px;">
-  <img src="resources/images/divider.png" alt="Divider" width="100%">
-  <p style="color: #666; font-style: italic;">Made with ❤️ by the ESP32 Community</p>
+  <p style="color: #666; font-style: italic;">Made with ❤️</p>
   
   <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/stargazers">
     <img src="https://img.shields.io/github/stars/desiFish/ESP32-GPS-CLOCK-V1?style=social" alt="Stars">
