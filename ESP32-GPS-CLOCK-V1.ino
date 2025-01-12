@@ -1,3 +1,25 @@
+/*
+ * ESP32 GPS Clock & Weather Station
+ *
+ * Pin Configuration:
+ * LCD:
+ *   - LCD Brightness: GPIO4 (PWM)
+ *   - LCD Enable: GPIO33
+ *   - LCD SPI: GPIO18 (CLK), GPIO23 (MOSI), GPIO5 (CS)
+ *
+ * Sensors:
+ *   - BME280: I2C (SDA: GPIO21, SCL: GPIO22)
+ *   - BH1750: I2C (shares bus with BME280)
+ *
+ * GPS:
+ *   - RX: GPIO16
+ *   - TX: GPIO17
+ *   - Power Control: GPIO19
+ *
+ * Buzzer:
+ *   - Control: GPIO25
+ */
+
 #include <SPI.h>
 #include <TinyGPSPlus.h>
 #include <U8g2lib.h>
@@ -22,7 +44,11 @@ Preferences pref;
 String ssid;
 String password;
 
-// Wifi Manager HTML Code
+/**
+ * @brief WiFi Manager HTML template
+ * Contains responsive design for configuration portal
+ * Styles included for better mobile experience
+ */
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -214,6 +240,10 @@ time_t prevDisplay = 0; // when the digital clock was displayed
 // for creating task attached to CORE 0 of CPU
 TaskHandle_t loop1Task;
 
+/**
+ * @brief Callback when OTA update starts
+ * Shows update status on LCD display
+ */
 void onOTAStart()
 {
   // Log when OTA has started
@@ -230,6 +260,12 @@ void onOTAStart()
   // <Add your own code here>
 }
 
+/**
+ * @brief Progress callback during OTA update
+ * @param current Number of bytes transferred
+ * @param final Total number of bytes
+ * Shows progress on LCD with byte counts
+ */
 void onOTAProgress(size_t current, size_t final)
 {
   // Log
@@ -255,6 +291,11 @@ void onOTAProgress(size_t current, size_t final)
   }
 }
 
+/**
+ * @brief Callback when OTA update ends
+ * @param success Boolean indicating if update was successful
+ * Shows completion status on LCD display
+ */
 void onOTAEnd(bool success)
 {
   // Log when OTA has finished
@@ -329,14 +370,14 @@ void setup()
 
   // Set up oversampling and filter initialization
   bme.setSampling(Adafruit_BME280::MODE_NORMAL,
-                  Adafruit_BME280::SAMPLING_X16,  // temperature
-                  Adafruit_BME280::SAMPLING_NONE, // pressure
-                  Adafruit_BME280::SAMPLING_X16,  // humidity
-                  Adafruit_BME280::FILTER_X16,
-                  Adafruit_BME280::STANDBY_MS_1000);
+                  Adafruit_BME280::SAMPLING_X16,     // temperature
+                  Adafruit_BME280::SAMPLING_NONE,    // pressure
+                  Adafruit_BME280::SAMPLING_X16,     // humidity
+                  Adafruit_BME280::FILTER_X16,       // filter
+                  Adafruit_BME280::STANDBY_MS_1000); // set delay between measurements
 
   if (getCpuFrequencyMhz() != 160)
-    setCpuFrequencyMhz(160);
+    setCpuFrequencyMhz(160); // if not 160MHz, set to 160MHz
 
   // wifi manager
   if (true)
@@ -565,12 +606,12 @@ void loop1(void *pvParameters)
 
 // RUNS ON CORE 1
 void loop(void)
-{
+{ // Main loop for display and GPS operations
   if (true)
     ElegantOTA.loop();
 
   while (gps.hdop.hdop() > 30 && gps.satellites.value() < 4)
-  {
+  { // if gps signal is weak
     gpsInfo("Waiting for GPS...");
   }
 
@@ -597,9 +638,9 @@ void loop(void)
   seconds = second();
 
   if (!updateInProgress)
-  {
+  { // if OTA update is not in progress
     if (timeStatus() != timeNotSet)
-    {
+    { // if time is set
       if (now() != prevDisplay)
       { // update the display only if the time has changed
         prevDisplay = now();
@@ -627,6 +668,7 @@ void loop(void)
         byte x = days % 10;
         u8g2.setFont(u8g2_font_profont10_mr);
         u8g2.setCursor(22, 25);
+
         if (days == 11 || days == 12 || days == 13)
           u8g2.print("th");
         else if (x == 1)
@@ -696,6 +738,7 @@ void loop(void)
         }
         else
         {
+          // normal display
           u8g2.setFont(u8g2_font_logisoso30_tn);
           u8g2.setCursor(15, 63);
           if (hours < 10)
@@ -742,7 +785,11 @@ void loop(void)
   }
 }
 
-// This custom version of delay() ensures that the gps object is being "fed".
+/**
+ * @brief Smart delay function for GPS data processing
+ * @param ms Delay duration in milliseconds
+ * Ensures GPS data is processed during delay period
+ */
 static void smartDelay(unsigned long ms)
 {
   unsigned long start = millis();
@@ -753,7 +800,12 @@ static void smartDelay(unsigned long ms)
   } while (millis() - start < ms);
 }
 
-// int delay value, byte count value
+/**
+ * @brief Generate beep pattern
+ * @param Delay Duration of each beep in milliseconds
+ * @param count Number of beeps to generate
+ * Used for hourly and half-hourly chimes
+ */
 void buzzer(int Delay, byte count)
 {
   for (int i = 0; i < count; i++)
@@ -765,7 +817,17 @@ void buzzer(int Delay, byte count)
   }
 }
 
-// helper function for retreiving and displaying gps data along with title ("msg")
+/**
+ * @brief Display GPS information screen
+ * @param msg Status message to display
+ * Shows:
+ * - Number of satellites
+ * - HDOP value
+ * - Speed in km/h
+ * - Fix age
+ * - Altitude
+ * - Latitude/Longitude
+ */
 void gpsInfo(String msg)
 {
   u8g2.clearBuffer();
@@ -815,7 +877,13 @@ void gpsInfo(String msg)
   smartDelay(900);
 }
 
-// related to wifi manager helping screen
+/**
+ * @brief Display WiFi configuration instructions
+ * Shows steps to:
+ * 1. Enable WiFi
+ * 2. Connect to AP
+ * 3. Enter credentials
+ */
 void wifiManagerInfoPrint()
 {
   u8g2.clearBuffer();
@@ -832,7 +900,13 @@ void wifiManagerInfoPrint()
   u8g2.print("Password: WIFImanager");
   u8g2.sendBuffer();
 }
-// related to wifi manager helping screen, triggers when user connect to access point of esp32
+
+/**
+ * @brief Handle WiFi connection events
+ * @param event WiFi event type
+ * Shows configuration portal access instructions
+ * when device is connected to in AP mode
+ */
 void WiFiEvent(WiFiEvent_t event)
 {
   if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED)
@@ -853,6 +927,12 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
+/**
+ * @brief Display error message with countdown
+ * @param device Name of device with error
+ * @param msg Error message to display
+ * @note Shows message for 5 seconds with countdown
+ */
 void errorMsgPrint(String device, String msg)
 {
   byte i = 5;

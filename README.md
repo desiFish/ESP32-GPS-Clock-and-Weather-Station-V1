@@ -1,19 +1,21 @@
 <div align="center">
-  <h1>🌍 ESP32 GPS Clock & Weather Station</h1>
-  <p>
-    <a href="/LICENSE"><img src="https://img.shields.io/github/license/desiFish/ESP32-GPS-CLOCK-V1" alt="License"></a>
-    <img src="https://img.shields.io/badge/platform-ESP32-green.svg" alt="Platform">
-    <img src="https://img.shields.io/badge/Arduino-Compatible-yellow.svg" alt="Arduino">
+  <img src="resources/images/logo.png" alt="Project Logo" width="150" style="margin-bottom: 20px;">
+  
+  # 🌟 ESP32 GPS Clock & Weather Station
+
+  [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=for-the-badge)](LICENSE)
+  [![ESP32](https://img.shields.io/badge/ESP32-Developer-blue?style=for-the-badge&logo=espressif)](https://www.espressif.com/)
+  [![Arduino](https://img.shields.io/badge/Arduino-Compatible-green?style=for-the-badge&logo=arduino)](https://www.arduino.cc/)
+  
+  [![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1)
+  [![Issues](https://img.shields.io/github/issues/desiFish/ESP32-GPS-CLOCK-V1?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1/issues)
+
+  <p align="center">
+    <i>A precision timepiece that syncs with satellites and monitors your environment! 🛰️</i>
   </p>
-  <p>
-    <img src="https://img.shields.io/badge/status-active-success.svg" alt="Status">
-    <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/issues"><img src="https://img.shields.io/github/issues/desiFish/ESP32-GPS-CLOCK-V1.svg" alt="GitHub Issues"></a>
-    <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/releases"><img src="https://img.shields.io/github/v/release/desiFish/ESP32-GPS-CLOCK-V1" alt="Release"></a>
-  </p>
-  <p><em>A smart clock that syncs with GPS satellites and monitors environmental conditions! 🛰️</em></p>
 </div>
 
----
+<hr style="border: 2px solid #f0f0f0; margin: 30px 0;">
 
 <h2>✨ Features</h2>
 <table>
@@ -34,6 +36,22 @@
     <td>WiFi with OTA updates</td>
   </tr>
 </table>
+
+<div align="center" style="background: linear-gradient(45deg, #1a1a1a, #2a2a2a); padding: 20px; border-radius: 10px; margin: 20px 0;">
+  <h2 style="color: white;">🌟 Project Highlights</h2>
+  <table style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+    <tr>
+      <td>⚡ Fast GPS Lock</td>
+      <td>🌙 Auto Brightness</td>
+      <td>🔄 OTA Updates</td>
+    </tr>
+    <tr>
+      <td>📱 WiFi Manager</td>
+      <td>🔋 Battery Backup</td>
+      <td>🌡️ Environment Monitor</td>
+    </tr>
+  </table>
+</div>
 
 <h2>🛠️ Hardware Requirements</h2>
 
@@ -61,13 +79,22 @@
 
 </details>
 
+<div style="background-color: #f8f9fa; border-radius: 10px; padding: 20px; margin: 20px 0;">
+  <h3>🎯 Key Features Explained</h3>
+  <ul>
+    <li>🕒 <strong>Precise Timekeeping:</strong> GPS-synchronized time with battery backup</li>
+    <li>🌡️ <strong>Environmental Monitoring:</strong> Temperature and humidity tracking</li>
+    <li>📱 <strong>Smart Connectivity:</strong> WiFi enabled with web configuration</li>
+    <li>🔆 <strong>Adaptive Display:</strong> Auto-brightness with power saving</li>
+  </ul>
+</div>
+
 <h2>⚠️ Important Notice</h2>
 <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; border-left: 5px solid #ffeeba;">
   <strong>❌ DO NOT USE AHT25 SENSOR!</strong><br>
   Due to significant accuracy issues, we recommend using BME280/BMP280/TMP117 instead.
 </div> <br>
 <strong>🔋 GPS Battery Modification</strong>
----
 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px;">
   <h4>⚠️ Known Issue with GPS Module's Internal Battery</h4>
   <p>
@@ -119,7 +146,7 @@
     <br>
     <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png" 
          alt="GPS Clock Schematic" 
-         width="300px"
+         width="600px"
          style="border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <p><em>ESP32 GPS Clock Circuit Diagram</em></p>
 
@@ -240,6 +267,11 @@
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️</sub>
+<div align="center" style="margin-top: 50px;">
+  <img src="resources/images/divider.png" alt="Divider" width="100%">
+  <p style="color: #666; font-style: italic;">Made with ❤️ by the ESP32 Community</p>
+  
+  <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V1/stargazers">
+    <img src="https://img.shields.io/github/stars/desiFish/ESP32-GPS-CLOCK-V1?style=social" alt="Stars">
+  </a>
 </div>
