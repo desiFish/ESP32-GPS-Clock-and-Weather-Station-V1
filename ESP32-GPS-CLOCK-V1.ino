@@ -1,28 +1,28 @@
 #include <SPI.h>
-#include <U8g2lib.h>
-#include <Wire.h>
 #include <TinyGPSPlus.h>
-#include <Adafruit_AHTX0.h>
+#include <U8g2lib.h>
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 #include <BH1750.h>
+
 #include <TimeLib.h>
 #include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
-#include <esp_wifi.h>
-#include "driver/adc.h"
-
-//Data Storage
+// Data Storage
 #include <Preferences.h>
-//Preference library object or instance
+// Preference library object or instance
 Preferences pref;
 
-//your wifi name and password (saved in preference library)
+// your wifi name and password (saved in preference library)
 String ssid;
 String password;
 
-//Wifi Manager HTML Code
+// Wifi Manager HTML Code
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -165,57 +165,57 @@ button {
 )rawliteral";
 
 // Search for parameter in HTTP POST request
-const char* PARAM_INPUT_1 = "ssid";
-const char* PARAM_INPUT_2 = "pass";
+const char *PARAM_INPUT_1 = "ssid";
+const char *PARAM_INPUT_2 = "pass";
 
-const String newHostname = "NiniClock";  //any name that you desire
+const String newHostname = "NiniClock"; // any name that you desire
 
 AsyncWebServer server(80);
-//Elegant OTA related task
+// Elegant OTA related task
 bool updateInProgress = false;
 unsigned long ota_progress_millis = 0;
 
-Adafruit_AHTX0 aht;
-BH1750 lightMeter;
+Adafruit_BME280 bme; // object environmental sensor
+float temp2, hum;
+BH1750 lightMeter; // object light sensor
 
 U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, 18, 23, 5, U8X8_PIN_NONE);
 
-#define lcdBrightnessPin 4
-#define lcdEnablePin 33
-#define buzzerPin 25
+#define lcdBrightnessPin 4 // PWM pin for LCD backlight control
+#define lcdEnablePin 33    // LCD enable pin
+#define buzzerPin 25       // Buzzer control pin
 
-char week[7][12] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-char monthChar[12][12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+char week[7][12] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+char monthChar[12][12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 // GPS things
-static const int RXPin = 16, TXPin = 17;
+static const int RXPin = 16, TXPin = 17; // GPS UART pins
 TinyGPSPlus gps;
-#define gpsPin 19
+#define gpsPin 19 // GPS power control pin
 
-//variables for holding time data globally
+// variables for holding time data globally
 byte days = 0, months = 0, hours = 0, minutes = 0, seconds = 0;
 int years = 0;
 
-bool isDark = false;
+bool isDark = false; // Tracks ambient light state
 
-//LUX (BH1750) update frequency
-unsigned long lastTime1 = 0;
-const long timerDelay1 = 3000;  // LUX delay
+// LUX (BH1750) update frequency
+unsigned long lastTime1 = 0;   // Last light sensor update
+const long timerDelay1 = 3000; // Light sensor update interval (3 seconds)
 
-//AHT25 update frequency
-unsigned long lastTime2 = 0;
-const long timerDelay2 = 12000;  // aht update delay
+// BME280 update frequency
+unsigned long lastTime2 = 0;    // Last temperature sensor update
+const long timerDelay2 = 60000; // Temperature update interval (1 minute)
 
-sensors_event_t humidity, temp;
+byte pulse = 0; // Used for blinking time separator
 
-byte pulse = 0;
+time_t prevDisplay = 0; // when the digital clock was displayed
 
-time_t prevDisplay = 0;  // when the digital clock was displayed
-
-//for creating task attached to CORE 0 of CPU
+// for creating task attached to CORE 0 of CPU
 TaskHandle_t loop1Task;
 
-void onOTAStart() {
+void onOTAStart()
+{
   // Log when OTA has started
   updateInProgress = true;
   Serial.println("OTA update started!");
@@ -230,9 +230,11 @@ void onOTAStart() {
   // <Add your own code here>
 }
 
-void onOTAProgress(size_t current, size_t final) {
+void onOTAProgress(size_t current, size_t final)
+{
   // Log
-  if (millis() - ota_progress_millis > 500) {
+  if (millis() - ota_progress_millis > 500)
+  {
     ota_progress_millis = millis();
     Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
     u8g2.clearBuffer();
@@ -253,9 +255,11 @@ void onOTAProgress(size_t current, size_t final) {
   }
 }
 
-void onOTAEnd(bool success) {
+void onOTAEnd(bool success)
+{
   // Log when OTA has finished
-  if (success) {
+  if (success)
+  {
     Serial.println("OTA update finished successfully!");
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_luRS08_tr);
@@ -264,7 +268,9 @@ void onOTAEnd(bool success) {
     u8g2.setCursor(1, 32);
     u8g2.print("COMPLETED!");
     u8g2.sendBuffer();
-  } else {
+  }
+  else
+  {
     Serial.println("There was an error during OTA update!");
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_luRS08_tr);
@@ -279,23 +285,27 @@ void onOTAEnd(bool success) {
   delay(1000);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   Wire.begin();
+  Wire.setClock(400000);
   pinMode(gpsPin, OUTPUT);
-  digitalWrite(gpsPin, HIGH); // you can connect the gps directly to 3.3V pin 
+  digitalWrite(gpsPin, HIGH); // you can connect the gps directly to 3.3V pin
   pinMode(lcdBrightnessPin, OUTPUT);
   analogWrite(lcdBrightnessPin, 250);
   pinMode(lcdEnablePin, OUTPUT);
   digitalWrite(lcdEnablePin, HIGH);
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, HIGH);
-  delay(100);
+  delay(50);
   digitalWrite(buzzerPin, LOW);
+  Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
+
   if (!lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE))
     errorMsgPrint("BH1750", "CANNOT FIND");
 
-  if (!pref.begin("database", false))  //open database
+  if (!pref.begin("database", false)) // open database
     errorMsgPrint("DATABASE", "ERROR INITIALIZE");
 
   u8g2.begin();
@@ -307,24 +317,33 @@ void setup() {
   u8g2.drawLine(0, 31, 127, 31);
   u8g2.sendBuffer();
   delay(1000);
-  u8g2.clearBuffer();
+  /*u8g2.clearBuffer();
   u8g2.drawBox(0, 0, 127, 63);
   u8g2.sendBuffer();
-  delay(500);
+  delay(500);*/
 
-  Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
+  if (!bme.begin())
+    errorMsgPrint("BME280", "CANNOT FIND");
 
-  if (!aht.begin()) {
-    errorMsgPrint("AHT25", "CANNOT FIND");
-  }
+  Serial.println("BME Ready");
 
-  setCpuFrequencyMhz(160);
-  aht.getEvent(&humidity, &temp);
+  // Set up oversampling and filter initialization
+  bme.setSampling(Adafruit_BME280::MODE_NORMAL,
+                  Adafruit_BME280::SAMPLING_X16,  // temperature
+                  Adafruit_BME280::SAMPLING_NONE, // pressure
+                  Adafruit_BME280::SAMPLING_X16,  // humidity
+                  Adafruit_BME280::FILTER_X16,
+                  Adafruit_BME280::STANDBY_MS_1000);
 
-  //wifi manager
-  if (true) {
+  if (getCpuFrequencyMhz() != 160)
+    setCpuFrequencyMhz(160);
+
+  // wifi manager
+  if (true)
+  {
     bool wifiConfigExist = pref.isKey("ssid");
-    if (!wifiConfigExist) {
+    if (!wifiConfigExist)
+    {
       pref.putString("ssid", "");
       pref.putString("password", "");
     }
@@ -332,7 +351,8 @@ void setup() {
     ssid = pref.getString("ssid", "");
     password = pref.getString("password", "");
 
-    if (ssid == "" || password == "") {
+    if (ssid == "" || password == "")
+    {
       Serial.println("No values saved for ssid or password");
       // Connect to Wi-Fi network with SSID and password
       Serial.println("Setting AP (Access Point)");
@@ -345,11 +365,11 @@ void setup() {
       wifiManagerInfoPrint();
 
       // Web Server Root URL
-      server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(200, "text/html", index_html);
-      });
+      server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest *request)
+                { request->send(200, "text/html", index_html); });
 
-      server.on("/wifi", HTTP_POST, [](AsyncWebServerRequest* request) {
+      server.on("/wifi", HTTP_POST, [](AsyncWebServerRequest *request)
+                {
         int params = request->params();
         for (int i = 0; i < params; i++) {
           const AsyncWebParameter* p = request->getParam(i);
@@ -375,8 +395,7 @@ void setup() {
         }
         request->send(200, "text/plain", "Done. Device will now restart.");
         delay(3000);
-        ESP.restart();
-      });
+        ESP.restart(); });
       server.begin();
       WiFi.onEvent(WiFiEvent);
       while (true)
@@ -400,7 +419,8 @@ void setup() {
   count variable stores the status of WiFi connection. 0 means NOT CONNECTED. 1 means CONNECTED
   */
     bool count = 1;
-    while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    while (WiFi.waitForConnectResult() != WL_CONNECTED)
+    {
       u8g2.clearBuffer();
       u8g2.setFont(u8g2_font_luRS08_tr);
       u8g2.setCursor(1, 20);
@@ -415,11 +435,10 @@ void setup() {
       Serial.println("Connection Failed");
       delay(6000);
       count = 0;
-      pref.putString("ssid", "");
-      pref.putString("password", "");
       break;
     }
-    if (count) {  //if wifi is connected
+    if (count)
+    { // if wifi is connected
       Serial.println(ssid);
       Serial.println(WiFi.localIP());
       u8g2.clearBuffer();
@@ -429,15 +448,13 @@ void setup() {
       u8g2.setCursor(1, 42);
       u8g2.print(WiFi.localIP());
       u8g2.sendBuffer();
-      delay(4000);
 
-      server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(200, "text/plain", "Hi! Please add "
-                                         "/update"
-                                         " on the above address.");
-      });
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                { request->send(200, "text/plain", "Hi! Please add "
+                                                   "/update"
+                                                   " on the above address."); });
 
-      ElegantOTA.begin(&server);  // Start ElegantOTA
+      ElegantOTA.begin(&server); // Start ElegantOTA
       // ElegantOTA callbacks
       ElegantOTA.onStart(onOTAStart);
       ElegantOTA.onProgress(onOTAProgress);
@@ -445,18 +462,19 @@ void setup() {
 
       server.begin();
       Serial.println("HTTP server started");
+      delay(3500);
     }
   }
-  //Wifi related stuff END
+  // Wifi related stuff END
 
   xTaskCreatePinnedToCore(
-    loop1,        // Task function.
-    "loop1Task",  // name of task.
-    10000,        // Stack size of task
-    NULL,         // parameter of the task
-    1,            // priority of the task
-    &loop1Task,   // Task handle to keep track of created task
-    0);           // pin task to core 0
+      loop1,       // Task function.
+      "loop1Task", // name of task.
+      10000,       // Stack size of task
+      NULL,        // parameter of the task
+      1,           // priority of the task
+      &loop1Task,  // Task handle to keep track of created task
+      0);          // pin task to core 0
   pref.end();
 
   u8g2.clearBuffer();
@@ -466,18 +484,24 @@ void setup() {
   u8g2.setCursor(36, 52);
   u8g2.print("NINI");
   u8g2.setFont(u8g2_font_streamline_food_drink_t);
-  u8g2.drawUTF8(80, 54, "U+4");  //birthday cake icon
+  u8g2.drawUTF8(80, 54, "U+4"); // birthday cake icon
   u8g2.sendBuffer();
   delay(2500);
+  temp2 = bme.readTemperature();
+  hum = bme.readHumidity();
 }
-//humidity.relative_humidity
-//RUNS ON CORE 0
-void loop1(void* pvParameters) {
-  for (;;) {
-    if ((millis() - lastTime1) > timerDelay1) {  // light sensor based power saving operations
+
+// RUNS ON CORE 0
+void loop1(void *pvParameters)
+{
+  for (;;)
+  {
+    if ((millis() - lastTime1) > timerDelay1)
+    { // light sensor based power saving operations
       lightMeter.configure(BH1750::ONE_TIME_HIGH_RES_MODE);
       float lux;
-      while (!lightMeter.measurementReady(true)) {
+      while (!lightMeter.measurementReady(true))
+      {
         yield();
       }
       lux = lightMeter.readLightLevel();
@@ -485,19 +509,22 @@ void loop1(void* pvParameters) {
       Serial.println("LUXRaw: ");
       Serial.println(lux);
 
-      if (true) {  //is mute on dark enabled by user
-        if (lux <= 2)
+      if (true)
+      { // is mute-if-dark enabled by user
+        if (lux == 0)
           isDark = true;
         else
           isDark = false;
       }
       // Brightness control
-      if (true) {
+      if (true)
+      {
         if (lux == 0)
-          analogWrite(lcdBrightnessPin, 1);
-        else {
-          byte val1 = constrain(lux, 1, 120);      // constrain(number to constrain, lower end, upper end)
-          byte val3 = map(val1, 1, 120, 20, 255);  // map(value, fromLow, fromHigh, toLow, toHigh);  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+          analogWrite(lcdBrightnessPin, 5);
+        else
+        {
+          byte val1 = constrain(lux, 1, 120);     // constrain(number to constrain, lower end, upper end)
+          byte val3 = map(val1, 1, 120, 40, 255); // map(value, fromLow, fromHigh, toLow, toHigh);  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
           Serial.println("LUX: ");
           Serial.println(val3);
@@ -507,20 +534,27 @@ void loop1(void* pvParameters) {
 
       lastTime1 = millis();
     }
-    if ((millis() - lastTime2) > timerDelay2) {
-
-      aht.getEvent(&humidity, &temp);
+    if ((millis() - lastTime2) > timerDelay2)
+    {
+      temp2 = bme.readTemperature();
+      // press = bme.readPressure() / 100.0F;
+      hum = bme.readHumidity();
 
       lastTime2 = millis();
     }
-    if (!isDark) {  //if mute on dark is not active (or false)
-      if (true) {
-        if ((minutes == 0) && (seconds == 0)) {
+    if (!isDark)
+    { // if mute on dark is not active (or false)
+      if (true)
+      {
+        if ((minutes == 0) && (seconds == 0))
+        {
           buzzer(600, 1);
         }
       }
-      if (true) {
-        if ((minutes == 30) && (seconds == 0)) {
+      if (true)
+      {
+        if ((minutes == 30) && (seconds == 0))
+        {
           buzzer(500, 2);
         }
       }
@@ -529,20 +563,25 @@ void loop1(void* pvParameters) {
   }
 }
 
-//RUNS ON CORE 1
-void loop(void) {
+// RUNS ON CORE 1
+void loop(void)
+{
   if (true)
     ElegantOTA.loop();
 
-  while (gps.hdop.hdop() > 30 && gps.satellites.value() < 4) {
+  while (gps.hdop.hdop() > 30 && gps.satellites.value() < 4)
+  {
     gpsInfo("Waiting for GPS...");
   }
 
-  while (Serial1.available()) {
-    if (gps.encode(Serial1.read())) {  // process gps messages
+  while (Serial1.available())
+  {
+    if (gps.encode(Serial1.read()))
+    { // process gps messages
       // when TinyGPSPlus reports new data...
       unsigned long age = gps.time.age();
-      if (age < 500) {
+      if (age < 500)
+      {
         // set the Time according to the latest GPS reading
         setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
         adjustTime(19800);
@@ -557,14 +596,17 @@ void loop(void) {
   minutes = minute();
   seconds = second();
 
-  if (!updateInProgress) {
-    if (timeStatus() != timeNotSet) {
-      if (now() != prevDisplay) {  //update the display only if the time has changed
+  if (!updateInProgress)
+  {
+    if (timeStatus() != timeNotSet)
+    {
+      if (now() != prevDisplay)
+      { // update the display only if the time has changed
         prevDisplay = now();
         u8g2.clearBuffer();
         u8g2.setFont(u8g2_font_pixzillav1_tr);
         u8g2.setCursor(5, 15);
-        u8g2.print(temp.temperature, 2);
+        u8g2.print(temp2, 2);
         u8g2.setFont(u8g2_font_threepix_tr);
         u8g2.setCursor(40, 8);
         u8g2.print("o");
@@ -572,7 +614,7 @@ void loop(void) {
         u8g2.setCursor(45, 15);
         u8g2.print("C ");
         u8g2.setCursor(64, 15);
-        u8g2.print(humidity.relative_humidity, 2);
+        u8g2.print(hum, 2);
         u8g2.setCursor(100, 15);
         u8g2.print("%rH");
 
@@ -606,7 +648,8 @@ void loop(void) {
 
         u8g2.drawLine(0, 31, 127, 31);
 
-        if (days == 6 && months == 9) {  //special message on birthday
+        if (days == 6 && months == 9)
+        { // special message on birthday
           u8g2.setFont(u8g2_font_6x13_tr);
           u8g2.setCursor(5, 43);
           u8g2.print("HAPPY BIRTHDAY NINI!");
@@ -643,14 +686,16 @@ void loop(void) {
             u8g2.print("AM");
 
           u8g2.setFont(u8g2_font_waffle_t_all);
-          if (!isDark)                       //if mute on dark is not active (or false)
-            u8g2.drawUTF8(5, 54, "\ue271");  //symbol for hourly/half-hourly alarm
+          if (!isDark)                      // if mute on dark is not active (or false)
+            u8g2.drawUTF8(5, 54, "\ue271"); // symbol for hourly/half-hourly alarm
 
-          if (true)
-            u8g2.drawUTF8(5, 64, "\ue2b5");  //wifi-active symbol
+          if (WiFi.status() == WL_CONNECTED)
+            u8g2.drawUTF8(5, 64, "\ue2b5"); // wifi-active symbol
 
           u8g2.sendBuffer();
-        } else {
+        }
+        else
+        {
           u8g2.setFont(u8g2_font_logisoso30_tn);
           u8g2.setCursor(15, 63);
           if (hours < 10)
@@ -679,11 +724,11 @@ void loop(void) {
             u8g2.print("AM");
 
           u8g2.setFont(u8g2_font_waffle_t_all);
-          if (!isDark)                         //if mute on dark is not active (or false)
-            u8g2.drawUTF8(103, 52, "\ue271");  //symbol for hourly/half-hourly alarm
+          if (!isDark)                        // if mute on dark is not active (or false)
+            u8g2.drawUTF8(103, 52, "\ue271"); // symbol for hourly/half-hourly alarm
 
-          if (true)
-            u8g2.drawUTF8(112, 52, "\ue2b5");  //wifi-active symbol
+          if (WiFi.status() == WL_CONNECTED)
+            u8g2.drawUTF8(112, 52, "\ue2b5"); // wifi-active symbol
 
           u8g2.sendBuffer();
         }
@@ -697,19 +742,22 @@ void loop(void) {
   }
 }
 
-// This custom version of delay() ensures that the gps object
-// is being "fed".
-static void smartDelay(unsigned long ms) {
+// This custom version of delay() ensures that the gps object is being "fed".
+static void smartDelay(unsigned long ms)
+{
   unsigned long start = millis();
-  do {
+  do
+  {
     while (Serial1.available())
       gps.encode(Serial1.read());
   } while (millis() - start < ms);
 }
 
 // int delay value, byte count value
-void buzzer(int Delay, byte count) {
-  for (int i = 0; i < count; i++) {
+void buzzer(int Delay, byte count)
+{
+  for (int i = 0; i < count; i++)
+  {
     digitalWrite(buzzerPin, HIGH);
     delay(Delay);
     digitalWrite(buzzerPin, LOW);
@@ -717,8 +765,9 @@ void buzzer(int Delay, byte count) {
   }
 }
 
-//helper function for retreiving and displaying gps data along with title ("msg")
-void gpsInfo(String msg) {
+// helper function for retreiving and displaying gps data along with title ("msg")
+void gpsInfo(String msg)
+{
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_luRS08_tr);
   u8g2.setCursor(1, 9);
@@ -746,7 +795,7 @@ void gpsInfo(String msg) {
   u8g2.print("Fix Age");
   u8g2.setCursor(6, 63);
   u8g2.print(gps.time.age());
-  u8g2.print("ms");  //
+  u8g2.print("ms"); //
 
   u8g2.setCursor(42, 51);
   u8g2.print("Altitude");
@@ -766,8 +815,9 @@ void gpsInfo(String msg) {
   smartDelay(900);
 }
 
-//related to wifi manager helping screen
-void wifiManagerInfoPrint() {
+// related to wifi manager helping screen
+void wifiManagerInfoPrint()
+{
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_luRS08_tr);
   u8g2.setCursor(1, 10);
@@ -782,9 +832,11 @@ void wifiManagerInfoPrint() {
   u8g2.print("Password: WIFImanager");
   u8g2.sendBuffer();
 }
-//related to wifi manager helping screen, triggers when user connect to access point of esp32
-void WiFiEvent(WiFiEvent_t event) {
-  if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED) {
+// related to wifi manager helping screen, triggers when user connect to access point of esp32
+void WiFiEvent(WiFiEvent_t event)
+{
+  if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED)
+  {
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_luRS08_tr);
     u8g2.setCursor(1, 10);
@@ -801,27 +853,23 @@ void WiFiEvent(WiFiEvent_t event) {
   }
 }
 
-void errorMsgPrint(String device, String msg) {
-  while (true) {
-    delay(50);
+void errorMsgPrint(String device, String msg)
+{
+  byte i = 5;
+  while (i > 0)
+  {
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_t0_11_mf);
     u8g2.setCursor(5, 10);
     u8g2.print("ERROR: " + device);
     u8g2.drawLine(0, 11, 127, 11);
     u8g2.setCursor(5, 22);
-    u8g2.print("msg");
-
-    byte i = 5;
-    while (i > 0) {
-      u8g2.clearBuffer();
-      u8g2.setFont(u8g2_font_luRS08_tr);
-      u8g2.setCursor(60, 51);
-      u8g2.print(i);
-      u8g2.sendBuffer();
-      delay(1000);
-      i--;
-    }
-    break;
+    u8g2.print(msg);
+    u8g2.setFont(u8g2_font_luRS08_tr);
+    u8g2.setCursor(60, 51);
+    u8g2.print(i);
+    u8g2.sendBuffer();
+    delay(1000);
+    i--;
   }
 }
