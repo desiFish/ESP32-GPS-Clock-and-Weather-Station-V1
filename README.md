@@ -66,9 +66,6 @@
   <strong>❌ DO NOT USE AHT25 SENSOR!</strong><br>
   Due to significant accuracy issues, we recommend using BME280/BMP280/TMP117 instead.
 </div>
-
-<h2>📝 Important Notes</h2>
-
 <details>
 <summary><strong>🔋 GPS Battery Modification</strong></summary>
 
