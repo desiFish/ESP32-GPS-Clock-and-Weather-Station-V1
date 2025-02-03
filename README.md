@@ -17,7 +17,7 @@
 
 
   ><h2>⚠️ Enhanced Version Available ⚠️</h2>
-  ><p>An improved version of this project with physical buttons for better device configuration is >available at:<br>
+  ><p>An improved version of this project with physical buttons for better device configuration is available at:<br>
   ><a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V2">ESP32-GPS-CLOCK-V2</a></p>
   ><hr style="border: 2px solid #f0f0f0; margin: 20px 0;">
 
