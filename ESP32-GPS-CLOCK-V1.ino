@@ -1,7 +1,10 @@
 /*
  * ESP32-GPS-CLOCK-V1.ino
-
-  Copyright (C) 2024 desiFish
+ *
+ * Note: An enhanced version of this project with buttons for better device configuration
+ * is available at: https://github.com/desiFish/ESP32-GPS-CLOCK-V2
+ *
+ * Copyright (C) 2024 desiFish
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -242,7 +245,7 @@ bool isDark = false; // Tracks ambient light state
 
 // LUX (BH1750) update frequency
 unsigned long lastTime1 = 0;   // Last light sensor update
-const long timerDelay1 = 3000; // Light sensor update interval (3 seconds)
+const long timerDelay1 = 2000; // Light sensor update interval (2 seconds)
 
 // BME280 update frequency
 unsigned long lastTime2 = 0;    // Last temperature sensor update
@@ -254,6 +257,9 @@ time_t prevDisplay = 0; // when the digital clock was displayed
 
 // for creating task attached to CORE 0 of CPU
 TaskHandle_t loop1Task;
+
+// Add this with other global variables
+byte currentBrightness = 250; // Track current brightness level
 
 /**
  * @brief Callback when OTA update starts
@@ -553,7 +559,7 @@ void loop1(void *pvParameters)
   for (;;)
   {
     if ((millis() - lastTime1) > timerDelay1)
-    { // light sensor based power saving operations
+    {
       lightMeter.configure(BH1750::ONE_TIME_HIGH_RES_MODE);
       float lux;
       while (!lightMeter.measurementReady(true))
@@ -572,20 +578,42 @@ void loop1(void *pvParameters)
         else
           isDark = false;
       }
-      // Brightness control
+
+      // Improved brightness control with smooth transitions
       if (true)
       {
+        byte targetBrightness;
         if (lux == 0)
-          analogWrite(lcdBrightnessPin, 5);
+        {
+          targetBrightness = 5;
+        }
         else
         {
-          byte val1 = constrain(lux, 1, 120);     // constrain(number to constrain, lower end, upper end)
-          byte val3 = map(val1, 1, 120, 40, 255); // map(value, fromLow, fromHigh, toLow, toHigh);  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-
-          Serial.println("LUX: ");
-          Serial.println(val3);
-          analogWrite(lcdBrightnessPin, val3);
+          byte val1 = constrain(lux, 1, 120);
+          targetBrightness = map(val1, 1, 120, 40, 255);
         }
+
+        // Improved smooth transition with dynamic step size
+        if (currentBrightness != targetBrightness)
+        {
+          int diff = targetBrightness - currentBrightness;
+          // Calculate step size based on difference
+          // Larger differences = larger steps, smaller differences = smaller steps
+          byte stepSize = max(1, min(abs(diff) / 4, 15));
+
+          if (diff > 0)
+          {
+            currentBrightness = min(255, currentBrightness + stepSize);
+          }
+          else
+          {
+            currentBrightness = max(5, currentBrightness - stepSize);
+          }
+        }
+
+        Serial.println("Brightness: ");
+        Serial.println(currentBrightness);
+        analogWrite(lcdBrightnessPin, currentBrightness);
       }
 
       lastTime1 = millis();
@@ -625,7 +653,7 @@ void loop(void)
   if (true)
     ElegantOTA.loop();
 
-  while (gps.hdop.hdop() > 30 && gps.satellites.value() < 4)
+  while (gps.hdop.hdop() > 100 && gps.satellites.value() < 2)
   { // if gps signal is weak
     gpsInfo("Waiting for GPS...");
   }
