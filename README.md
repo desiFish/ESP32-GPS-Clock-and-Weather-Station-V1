@@ -1,12 +1,5 @@
-<div align="center">
-  <h2>⚠️ Enhanced Version Available ⚠️</h2>
-  <p>An improved version of this project with physical buttons for better device configuration is available at:<br>
-  <a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V2">ESP32-GPS-CLOCK-V2</a></p>
-  <hr style="border: 2px solid #f0f0f0; margin: 20px 0;">
-</div>
-
 <div align="center">  
-  # 🌟 ESP32 GPS Clock & Weather Station
+  <h1> 🌟 ESP32 GPS Clock & Weather Station </h1>
 
   [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=for-the-badge)](LICENSE)
   [![ESP32](https://img.shields.io/badge/ESP32-Developer-blue?style=for-the-badge&logo=espressif)](https://www.espressif.com/)
@@ -21,6 +14,13 @@
 </div>
 
 <hr style="border: 2px solid #f0f0f0; margin: 30px 0;">
+
+
+  ><h2>⚠️ Enhanced Version Available ⚠️</h2>
+  ><p>An improved version of this project with physical buttons for better device configuration is >available at:<br>
+  ><a href="https://github.com/desiFish/ESP32-GPS-CLOCK-V2">ESP32-GPS-CLOCK-V2</a></p>
+  ><hr style="border: 2px solid #f0f0f0; margin: 20px 0;">
+
 
 <h2>✨ Features</h2>
 <table>
