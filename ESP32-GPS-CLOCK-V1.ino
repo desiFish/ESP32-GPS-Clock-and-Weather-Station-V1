@@ -2,7 +2,7 @@
  * ESP32-GPS-CLOCK-V1.ino
  *
  * Note: An enhanced version of this project with buttons for better device configuration
- * is available at: https://github.com/desiFish/ESP32-GPS-CLOCK-V2
+ * is available at: https://github.com/desiFish/GPS-CLOCK-V2
  *
  * Copyright (C) 2024 desiFish
 
@@ -241,7 +241,7 @@ TinyGPSPlus gps;
 byte days = 0, months = 0, hours = 0, minutes = 0, seconds = 0;
 int years = 0;
 
-bool isDark = false; // Tracks ambient light state
+bool isDark; // Tracks ambient light state
 
 // LUX (BH1750) update frequency
 unsigned long lastTime1 = 0;   // Last light sensor update
@@ -466,7 +466,7 @@ void setup()
 
     WiFi.mode(WIFI_STA);
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
-    WiFi.setHostname("Nini_GClock");
+    WiFi.setHostname("NiniGPSClock");
     WiFi.begin(ssid.c_str(), password.c_str());
     Serial.println("");
 
@@ -571,13 +571,7 @@ void loop1(void *pvParameters)
       Serial.println("LUXRaw: ");
       Serial.println(lux);
 
-      if (true)
-      { // is mute-if-dark enabled by user
-        if (lux == 0)
-          isDark = true;
-        else
-          isDark = false;
-      }
+      isDark = true && (lux <= 2); // Check if it's dark only if muteDark is enabled
 
       // Improved brightness control with smooth transitions
       if (true)
@@ -626,21 +620,18 @@ void loop1(void *pvParameters)
 
       lastTime2 = millis();
     }
-    if (!isDark)
-    { // if mute on dark is not active (or false)
-      if (true)
+    if (!isDark && seconds == 0 && (true || true)) // Only check when seconds is 0
+    {
+      switch (minutes)
       {
-        if ((minutes == 0) && (seconds == 0))
-        {
+      case 0:
+        if (true)
           buzzer(600, 1);
-        }
-      }
-      if (true)
-      {
-        if ((minutes == 30) && (seconds == 0))
-        {
-          buzzer(500, 2);
-        }
+        break;
+      case 30:
+        if (true)
+          buzzer(400, 2);
+        break;
       }
     }
     delay(100);
