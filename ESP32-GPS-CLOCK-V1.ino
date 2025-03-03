@@ -349,13 +349,15 @@ void onOTAEnd(bool success)
 
 void setup()
 {
+  if (getCpuFrequencyMhz() != 160)
+    setCpuFrequencyMhz(160); // if not 160MHz, set to 160MHz
   Serial.begin(115200);
   Wire.begin();
-  Wire.setClock(400000);
+
   pinMode(gpsPin, OUTPUT);
   digitalWrite(gpsPin, HIGH); // you can connect the gps directly to 3.3V pin
   pinMode(lcdBrightnessPin, OUTPUT);
-  analogWrite(lcdBrightnessPin, 250);
+  analogWrite(lcdBrightnessPin, 50);
   pinMode(lcdEnablePin, OUTPUT);
   digitalWrite(lcdEnablePin, HIGH);
   pinMode(buzzerPin, OUTPUT);
@@ -364,25 +366,21 @@ void setup()
   digitalWrite(buzzerPin, LOW);
   Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
 
-  if (!lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE))
-    errorMsgPrint("BH1750", "CANNOT FIND");
-
-  if (!pref.begin("database", false)) // open database
-    errorMsgPrint("DATABASE", "ERROR INITIALIZE");
-
+  analogWrite(lcdBrightnessPin, 250);
   u8g2.begin();
   u8g2.clearBuffer();
   u8g2.drawLine(0, 17, 127, 17);
   u8g2.setFont(u8g2_font_7x14B_mr);
   u8g2.setCursor(12, 30);
-  u8g2.print("GPS Clock");
+  u8g2.print("GPS Clock V1");
   u8g2.drawLine(0, 31, 127, 31);
   u8g2.sendBuffer();
-  delay(1000);
-  /*u8g2.clearBuffer();
-  u8g2.drawBox(0, 0, 127, 63);
-  u8g2.sendBuffer();
-  delay(500);*/
+
+  if (!lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE))
+    errorMsgPrint("BH1750", "CANNOT FIND");
+
+  if (!pref.begin("database", false)) // open database
+    errorMsgPrint("DATABASE", "ERROR INITIALIZE");
 
   if (!bme.begin())
     errorMsgPrint("BME280", "CANNOT FIND");
@@ -396,9 +394,7 @@ void setup()
                   Adafruit_BME280::SAMPLING_X16,     // humidity
                   Adafruit_BME280::FILTER_X16,       // filter
                   Adafruit_BME280::STANDBY_MS_1000); // set delay between measurements
-
-  if (getCpuFrequencyMhz() != 160)
-    setCpuFrequencyMhz(160); // if not 160MHz, set to 160MHz
+  delay(1000);
 
   // wifi manager
   if (true)
@@ -477,10 +473,10 @@ void setup()
     u8g2.setCursor(1, 32);
     u8g2.print("TO CONNECT");
     u8g2.sendBuffer();
-    /*
-  count variable stores the status of WiFi connection. 0 means NOT CONNECTED. 1 means CONNECTED
-  */
-    bool count = 1;
+
+    // count variable stores the status of WiFi connection. 0 means NOT CONNECTED. 1 means CONNECTED
+
+    bool count = true;
     while (WiFi.waitForConnectResult() != WL_CONNECTED)
     {
       u8g2.clearBuffer();
@@ -496,7 +492,7 @@ void setup()
       u8g2.sendBuffer();
       Serial.println("Connection Failed");
       delay(6000);
-      count = 0;
+      count = false;
       break;
     }
     if (count)
@@ -548,7 +544,7 @@ void setup()
   u8g2.setFont(u8g2_font_streamline_food_drink_t);
   u8g2.drawUTF8(80, 54, "U+4"); // birthday cake icon
   u8g2.sendBuffer();
-  delay(2500);
+  delay(2000);
   temp2 = bme.readTemperature();
   hum = bme.readHumidity();
 }
@@ -571,7 +567,7 @@ void loop1(void *pvParameters)
       Serial.println("LUXRaw: ");
       Serial.println(lux);
 
-      isDark = true && (lux <= 2); // Check if it's dark only if muteDark is enabled
+      isDark = true && (lux <= 1); // Check if it's dark only if muteDark is enabled
 
       // Improved brightness control with smooth transitions
       if (true)
@@ -724,8 +720,8 @@ void loop(void)
 
         u8g2.drawLine(0, 31, 127, 31);
 
-        if (days == 6 && months == 9)
-        { // special message on birthday
+        if (days == 6 && months == 9) // set this to ZERO if you don't want to show birthday message
+        {                             // special message on birthday
           u8g2.setFont(u8g2_font_6x13_tr);
           u8g2.setCursor(5, 43);
           u8g2.print("HAPPY BIRTHDAY NINI!");
@@ -756,10 +752,7 @@ void loop(void)
           u8g2.print(seconds);
 
           u8g2.setCursor(95, 63);
-          if (!isAM())
-            u8g2.print("PM");
-          else
-            u8g2.print("AM");
+          u8g2.print(isAM() ? "AM" : "PM");
 
           u8g2.setFont(u8g2_font_waffle_t_all);
           if (!isDark)                      // if mute on dark is not active (or false)
@@ -767,8 +760,6 @@ void loop(void)
 
           if (WiFi.status() == WL_CONNECTED)
             u8g2.drawUTF8(5, 64, "\ue2b5"); // wifi-active symbol
-
-          u8g2.sendBuffer();
         }
         else
         {
@@ -795,10 +786,7 @@ void loop(void)
           u8g2.print(seconds);
 
           u8g2.setCursor(105, 63);
-          if (!isAM())
-            u8g2.print("PM");
-          else
-            u8g2.print("AM");
+          u8g2.print(isAM() ? "AM" : "PM");
 
           u8g2.setFont(u8g2_font_waffle_t_all);
           if (!isDark)                        // if mute on dark is not active (or false)
@@ -806,14 +794,9 @@ void loop(void)
 
           if (WiFi.status() == WL_CONNECTED)
             u8g2.drawUTF8(112, 52, "\ue2b5"); // wifi-active symbol
-
-          u8g2.sendBuffer();
         }
-
-        if (pulse == 1)
-          pulse = 0;
-        else if (pulse == 0)
-          pulse = 1;
+        u8g2.sendBuffer();
+        pulse = !pulse;
       }
     }
   }
