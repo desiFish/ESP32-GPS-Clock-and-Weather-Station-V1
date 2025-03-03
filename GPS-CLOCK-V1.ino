@@ -1,5 +1,5 @@
 /*
- * ESP32-GPS-CLOCK-V1.ino
+ * GPS-CLOCK-V1.ino
  *
  * Note: An enhanced version of this project with buttons for better device configuration
  * is available at: https://github.com/desiFish/GPS-CLOCK-V2
