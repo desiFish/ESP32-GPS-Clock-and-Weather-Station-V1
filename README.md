@@ -84,6 +84,18 @@
 
 </details>
 
+<details>
+<summary><strong>Required Libraries 📚</strong></summary>
+
+| Library | Source | Notes |
+|---------|--------|-------|
+| ASyncTCP | [ESP32Async](https://github.com/ESP32Async/AsyncTCP) | Latest version |
+| ESPAsyncWebServer | [ESP32Async](https://github.com/ESP32Async/ESPAsyncWebServer) | Latest version |
+
+> ℹ️ **Note:** We use the libraries from ESP32Async repository as they are regularly maintained and updated.
+
+</details>
+
 <div style="background-color: #f8f9fa; border-radius: 10px; padding: 20px; margin: 20px 0;">
   <h3>🎯 Key Features Explained</h3>
   <ul>

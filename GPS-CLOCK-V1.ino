@@ -36,6 +36,9 @@
  *
  * Buzzer:
  *   - Control: GPIO25
+
+ * Sketch uses 1099226 bytes (83%) of program storage space. Maximum is 1310720 bytes.
+ * Global variables use 49520 bytes (15%) of dynamic memory, leaving 278160 bytes for local variables. Maximum is 327680 bytes.
  */
 
 #include <SPI.h>
