@@ -300,6 +300,8 @@
 <div align="center">
   <ul style="list-style: none;">
     <li><a href="https://www.flaticon.com/free-icons/clock" title="clock icons">Clock favicon created by Those Icons - Flaticon</a></li>
+    <li>📚 Library maintainers of AsyncTCP and ESPAsyncWebServer</li>
+    <li>🌟 The amazing open source community for their contributions and support</li>
   </ul>
 </div>
 
