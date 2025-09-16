@@ -8,7 +8,7 @@
   [![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1)
   [![Issues](https://img.shields.io/github/issues/desiFish/ESP32-GPS-CLOCK-V1?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1/issues)
 
-<a href="https://www.flaticon.com/free-icons/clock" title="clock icons">Clock icons created by Those Icons - Flaticon</a>
+
   <p align="center">
     <i>A precision timepiece that syncs with satellites and monitors your environment! 🛰️</i>
   </p>
@@ -94,6 +94,19 @@
 | ESPAsyncWebServer | [ESP32Async](https://github.com/ESP32Async/ESPAsyncWebServer) | Latest version |
 
 > ℹ️ **Note:** We use the libraries from ESP32Async repository as they are regularly maintained and updated.
+
+</details>
+
+<details>
+<summary><strong>Initial Setup and Updates 🚀</strong></summary>
+
+| Step | Instructions | Notes |
+|------|-------------|--------|
+| 1. Initial Upload | Upload via USB/Serial first time | Required for initial flash |
+| 2. LittleFS Upload | [Generate & Upload HTML binaries](https://randomnerdtutorials.com/arduino-ide-2-install-esp32-littlefs/) | For web interface files |
+| 3. OTA Updates | [Enable ElegantOTA updates](https://randomnerdtutorials.com/esp32-ota-elegantota-arduino/) | For wireless updates |
+
+> ℹ️ **Note:** After initial USB upload, all subsequent updates can be done wirelessly via OTA.
 
 </details>
 
@@ -281,6 +294,13 @@
     💡 Suggesting improvements<br>
     🤝 Contributing code
   </p>
+</div>
+
+<h2>🎨 Credits</h2>
+<div align="center">
+  <ul style="list-style: none;">
+    <li><a href="https://www.flaticon.com/free-icons/clock" title="clock icons">Clock favicon created by Those Icons - Flaticon</a></li>
+  </ul>
 </div>
 
 ---
