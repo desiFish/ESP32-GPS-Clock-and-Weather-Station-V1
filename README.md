@@ -10,7 +10,7 @@
 
 
   <p align="center">
-    <i>A precision timepiece that syncs with satellites and monitors your environment! 🛰️</i>
+    <i>ESP32 GPS Clock & Weather Station is an open-source project that combines an ESP32 microcontroller with a GPS receiver and environmental sensors to create a satellite-synchronized digital clock and weather monitor. It displays precise time, temperature, humidity, and atmospheric data, making it ideal for DIY electronics enthusiasts, Arduino/ESP32 hobbyists, and IoT developers who need reliable, real-time information. With built-in support for auto-brightness control, OTA updates, and expandable hardware, this project works as both a GPS-based timekeeping alternative to NTP and a compact home weather station.🛰️</i>
   </p>
 </div>
 
@@ -175,7 +175,7 @@
 <div align="center" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
     <strong>👀 Circuit Diagram</strong>
     <br>
-    <img src="https://github.com/KamadoTanjiro-beep/ESP32-GPS-CLOCK-V1/blob/main/resources/schematic/Schematic_GPSClock-V1.png" 
+    <img src="/resources/schematic/Schematic_GPSClock-V1.png" 
          alt="GPS Clock Schematic" 
          width="600px"
          style="border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
@@ -203,22 +203,22 @@
     <tr>
       <!-- First Row -->
       <td width="33%">
-        <img src="resources/images/x1.jpg" 
-             alt="Internal Components" 
+        <img src="resources/images/esp32-gps-clockx1.jpg" 
+             alt="esp32-gps-clock Internal Components" 
              width="100%"
              style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <p><em>Internal Components 🔧</em></p>
       </td>
       <td width="33%">
-        <img src="resources/images/x2.jpg" 
-             alt="PVC Case" 
+        <img src="resources/images/esp32-gps-clockx2.jpg" 
+             alt="esp32-gps-clock PVC Case" 
              width="100%"
              style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <p><em>PVC Case 🎨</em></p>
       </td>
       <td width="33%">
-        <img src="resources/images/x3.jpg" 
-             alt="Front View" 
+        <img src="resources/images/esp32-gps-clockx3.jpg" 
+             alt="esp32-gps-clock Front View" 
              width="100%"
              style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <p><em>Front View 📱</em></p>
@@ -227,15 +227,15 @@
     <tr>
       <!-- Second Row -->
       <td width="33%">
-        <img src="resources/images/x4.jpg" 
-             alt="PCB Layout" 
+        <img src="resources/images/esp32-gps-clockx4.jpg" 
+             alt="esp32-gps-clock PCB Layout" 
              width="100%"
              style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <p><em>PCB Layout 🔌</em></p>
       </td>
       <td width="33%">
-        <img src="resources/images/x5.jpg" 
-             alt="Internal View 2" 
+        <img src="resources/images/esp32-gps-clockx5.jpg" 
+             alt="esp32-gps-clock Internal View 2" 
              width="100%"
              style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <p><em>Internal View 2 🔌</em></p>
