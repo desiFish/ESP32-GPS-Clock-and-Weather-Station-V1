@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Info</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <style>
+        :root {
+            --primary: #2196f3;
+            --accent: #ff9800;
+            --bg: #181818;
+            --surface: #232323;
+            --card: #222;
+            --text: #fff;
+            --text-secondary: #b0b0b0;
+            --success: #4caf50;
+            --error: #f44336;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        html,
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 40px auto 0 auto;
+            padding: 24px;
+            background: var(--surface);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            letter-spacing: 1px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 2em 1.2em 1.5em 1.2em;
+            margin-bottom: 2em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.2em;
+            font-weight: 500;
+        }
+
+        .sys-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            margin-bottom: 1.1em;
+            font-size: 1.1rem;
+        }
+
+        .sys-icon {
+            font-size: 1.5em;
+            margin-right: 0.7em;
+            width: 1.7em;
+            text-align: center;
+        }
+
+        .sys-label {
+            color: var(--text-secondary);
+            min-width: 120px;
+            text-align: left;
+        }
+
+        .sys-value {
+            font-weight: 600;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .mat-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 0.8em 2.2em;
+            font-size: 1.1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+            cursor: pointer;
+            margin-top: 1.5em;
+            transition: background 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .mat-btn:active {
+            background: var(--accent);
+            box-shadow: 0 1px 4px rgba(255, 152, 0, 0.18);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1.1rem;
+            margin-bottom: 2.2em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 0.7em;
+            background: var(--error);
+            box-shadow: 0 0 8px 2px var(--error);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px 2px var(--success);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 1.2em 0.5em 1em 0.5em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Hardware Info</h1>
+        <div class="status">
+            <span id="status-dot" class="dot"></span>
+            <span id="status-text">Checking...</span>
+        </div>
+        <!-- Navigation buttons under status -->
+        <div style="margin-bottom:2em;">
+            <button class="mat-btn" onclick="window.location.href='index.html'">
+                <span style="vertical-align:middle;">&#8962; Home</span>
+            </button>
+            <button class="mat-btn" onclick="window.location.href='gps.html'">
+                <span style="vertical-align:middle;">&#128205; GPS Info</span>
+            </button>
+        </div>
+        <div class="card">
+            <div class="card-title">System Details</div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128187;</span>
+                <span class="sys-label">Device</span>
+                <span class="sys-value" id="sys-device">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#9881;&#65039;</span>
+                <span class="sys-label">Chip Model</span>
+                <span class="sys-value" id="sys-chip">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128295;</span>
+                <span class="sys-label">Chip Revision</span>
+                <span class="sys-value" id="sys-rev">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128421;</span>
+                <span class="sys-label">Chip ID</span>
+                <span class="sys-value" id="sys-chipid">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128421;</span>
+                <span class="sys-label">MAC Address</span>
+                <span class="sys-value" id="sys-mac">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128190;</span>
+                <span class="sys-label">Flash Size</span>
+                <span class="sys-value" id="sys-flash">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#9889;</span>
+                <span class="sys-label">Flash Speed</span>
+                <span class="sys-value" id="sys-flashspeed">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128421;</span>
+                <span class="sys-label">Free Heap</span>
+                <span class="sys-value" id="sys-heap">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128421;</span>
+                <span class="sys-label">Sketch Size</span>
+                <span class="sys-value" id="sys-sketch">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128421;</span>
+                <span class="sys-label">CPU Freq</span>
+                <span class="sys-value" id="sys-cpu">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128246;</span>
+                <span class="sys-label">WiFi RSSI</span>
+                <span class="sys-value" id="sys-rssi">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128246;</span>
+                <span class="sys-label">IP Address</span>
+                <span class="sys-value" id="sys-ip">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128295;</span>
+                <span class="sys-label">SDK Version</span>
+                <span class="sys-value" id="sys-sdk">--</span>
+            </div>
+            <div class="sys-row">
+                <span class="sys-icon">&#128295;</span>
+                <span class="sys-label">Core Version</span>
+                <span class="sys-value" id="sys-core">--</span>
+            </div>
+        </div>
+        <footer style="margin-top:2em;color:#b0b0b0;font-size:0.95em;">
+            <span id="footer-version">v1.x.x</span> &nbsp;|&nbsp; &copy; 2024-2025 <a
+                href="https://github.com/desiFish/GPS-CLOCK-V1"
+                style="color:#b0b0b0;text-decoration:underline;">desiFish</a>
+        </footer>
+    </div>
+    <script>
+        // Status indicator logic (same as index.html)
+        function updateStatus() {
+            fetch('/api/status').then(r => {
+                if (r.ok) {
+                    document.getElementById('status-dot').classList.add('online');
+                    document.getElementById('status-text').textContent = 'Online';
+                } else {
+                    document.getElementById('status-dot').classList.remove('online');
+                    document.getElementById('status-text').textContent = 'Offline';
+                }
+            }).catch(_ => {
+                document.getElementById('status-dot').classList.remove('online');
+                document.getElementById('status-text').textContent = 'Offline';
+            });
+        }
+        setInterval(updateStatus, 3000);
+        updateStatus();
+
+        function fetchSys() {
+            fetch('/api/system/details')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('sys-device').textContent = data.device || 'ESP32';
+                    document.getElementById('sys-chip').textContent = data.chipModel || data.chip || '--';
+                    document.getElementById('sys-rev').textContent = data.chipRevision || data.revision || '--';
+                    document.getElementById('sys-chipid').textContent = data.chipId || '--';
+                    document.getElementById('sys-mac').textContent = data.macAddress || '--';
+                    document.getElementById('sys-flash').textContent = data.flashSize ? (data.flashSize + ' bytes') : '--';
+                    document.getElementById('sys-flashspeed').textContent = data.flashSpeed ? (data.flashSpeed + ' Hz') : '--';
+                    document.getElementById('sys-heap').textContent = data.freeHeap ? (data.freeHeap + ' bytes') : '--';
+                    document.getElementById('sys-sketch').textContent = data.sketchSize ? (data.sketchSize + ' bytes') : '--';
+                    document.getElementById('sys-cpu').textContent = data.cpuFreqMHz ? (data.cpuFreqMHz + ' MHz') : '--';
+                    document.getElementById('sys-rssi').textContent = data.wifiRssi !== undefined ? (data.wifiRssi + ' dBm') : '--';
+                    document.getElementById('sys-ip').textContent = data.ip || '--';
+                    document.getElementById('sys-sdk').textContent = data.sdkVersion || '--';
+                    document.getElementById('sys-core').textContent = data.coreVersion || '--';
+                })
+                .catch(() => {
+                    // set all to --
+                });
+        }
+        setInterval(fetchSys, 4000);
+        fetchSys();
+
+        // Footer version fetch
+        fetch('/api/version')
+            .then(r => r.ok ? r.text() : Promise.reject())
+            .then(ver => {
+                document.getElementById('footer-version').textContent = ver;
+            })
+            .catch(() => {
+                document.getElementById('footer-version').textContent = 'Error';
+            });
+    </script>
+</body>
+
+</html>

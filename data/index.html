@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS CLOCK V1</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <style>
+        :root {
+            --primary: #2196f3;
+            --accent: #ff9800;
+            --bg: #181818;
+            --surface: #232323;
+            --card: #222;
+            --text: #fff;
+            --text-secondary: #b0b0b0;
+            --success: #4caf50;
+            --error: #f44336;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        html,
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 40px auto 0 auto;
+            padding: 24px;
+            background: var(--surface);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1.1rem;
+            margin-bottom: 2.2em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 0.7em;
+            background: var(--error);
+            box-shadow: 0 0 8px 2px var(--error);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px 2px var(--success);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 2em 1.2em 1.5em 1.2em;
+            margin-bottom: 2em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.2em;
+            font-weight: 500;
+        }
+
+        /* Material Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 54px;
+            height: 32px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #444;
+            transition: background 0.3s;
+            border-radius: 32px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background: var(--primary);
+            transition: transform 0.3s, background 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
+        }
+
+        input:checked+.slider {
+            background: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+            background: var(--accent);
+        }
+
+        .switch-label {
+            margin-left: 1em;
+            font-size: 1.1rem;
+            vertical-align: middle;
+        }
+
+        /* Material Button */
+        .mat-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 0.8em 2.2em;
+            font-size: 1.1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+            cursor: pointer;
+            margin-top: 1.5em;
+            transition: background 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .mat-btn:active {
+            background: var(--accent);
+            box-shadow: 0 1px 4px rgba(255, 152, 0, 0.18);
+        }
+
+        .switch-label-center {
+            display: block;
+            margin-left: 0;
+            margin-top: 0.7em;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 1.2em 0.5em 1em 0.5em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>GPS CLOCK V1</h1>
+        <div class="status">
+            <span id="status-dot" class="dot"></span>
+            <span id="status-text">Checking...</span>
+        </div>
+        <!-- Navigation buttons under status -->
+        <div style="margin-bottom:2em;">
+            <button class="mat-btn" onclick="window.location.href='gps.html'">
+                <span style="vertical-align:middle;">&#128205; GPS Info</span>
+            </button>
+            <button class="mat-btn" onclick="window.location.href='hardware.html'">
+                <span style="vertical-align:middle;">&#9881;&#65039; Hardware Info</span>
+            </button>
+        </div>
+        <div style="height:2.5em;"></div>
+        <div class="card">
+            <div class="card-title">Buzzer Control</div>
+            <label class="switch">
+                <input type="checkbox" id="buzzer-switch">
+                <span class="slider"></span>
+            </label>
+            <div class="switch-label switch-label-center" id="buzzer-label">Buzzer OFF</div>
+        </div>
+
+        <!-- Display Off in Dark Card -->
+        <div class="card">
+            <div class="card-title">Display Off in Dark</div>
+            <label class="switch">
+                <input type="checkbox" id="display-dark-switch">
+                <span class="slider"></span>
+            </label>
+            <label class="switch-label-center" id="display-dark-label">OFF</label>
+
+            <!-- Deep sleep card removed -->
+        </div>
+
+    </div>
+
+    <!-- Footer with version -->
+    <footer style="margin-top:2em;color:#b0b0b0;font-size:0.95em;text-align:center;">
+        <span id="footer-version">v1.x.x</span> &nbsp;|&nbsp; &copy; 2024-2025 <a
+            href="https://github.com/desiFish/GPS-CLOCK-V1"
+            style="color:#b0b0b0;text-decoration:underline;">desiFish</a>
+    </footer>
+    </div>
+
+    <script>
+        // Online tracker
+        function updateStatus() {
+            fetch('/api/status').then(r => {
+                if (r.ok) {
+                    document.getElementById('status-dot').classList.add('online');
+                    document.getElementById('status-text').textContent = 'Online';
+                } else {
+                    document.getElementById('status-dot').classList.remove('online');
+                    document.getElementById('status-text').textContent = 'Offline';
+                }
+            }).catch(_ => {
+                document.getElementById('status-dot').classList.remove('online');
+                document.getElementById('status-text').textContent = 'Offline';
+            });
+        }
+        setInterval(updateStatus, 3000);
+        updateStatus();
+
+        // Buzzer switch logic (assumes /api/buzzer GET returns {"on":true/false}, POST {on:true/false})
+        const buzzerSwitch = document.getElementById('buzzer-switch');
+        const buzzerLabel = document.getElementById('buzzer-label');
+        const displayDarkSwitch = document.getElementById('display-dark-switch');
+        const displayDarkLabel = document.getElementById('display-dark-label');
+
+        function getBuzzerState() {
+            fetch('/api/buzzer').then(r => r.json()).then(data => {
+                const isOn = !!data.on;
+                buzzerSwitch.checked = isOn;
+                buzzerLabel.textContent = isOn ? 'Buzzer ON' : 'Buzzer OFF';
+                console.log('Buzzer state:', isOn ? 'ON' : 'OFF'); // Debug log
+            }).catch(err => {
+                console.error('Error fetching buzzer state:', err); // Debug log
+            });
+        }
+
+        buzzerSwitch.addEventListener('change', function () {
+            fetch('/api/buzzer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ on: buzzerSwitch.checked })
+            }).then(() => {
+                buzzerLabel.textContent = buzzerSwitch.checked ? 'Buzzer ON' : 'Buzzer OFF';
+                console.log('Updated buzzer state:', buzzerSwitch.checked ? 'ON' : 'OFF');
+            }).catch(err => {
+                console.error('Error updating buzzer state:', err);
+            });
+        });
+
+        // Deep sleep functions removed
+
+        function getDisplayDarkState() {
+            fetch('/api/display/off-in-dark').then(r => r.json()).then(data => {
+                displayDarkSwitch.checked = !!data.enabled;
+                displayDarkLabel.textContent = data.enabled ? 'Enabled' : 'Disabled';
+            });
+        }
+
+        displayDarkSwitch.addEventListener('change', function () {
+            // First update the main display off in dark state
+            fetch('/api/display/off-in-dark', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: displayDarkSwitch.checked })
+            }).then(() => {
+                displayDarkLabel.textContent = displayDarkSwitch.checked ? 'Enabled' : 'Disabled';
+            });
+        });
+
+        // Initialize all states on page load
+        getBuzzerState(); // This will also handle buzzer dark state if buzzer is on
+        getDisplayDarkState();
+
+        // Footer version fetch
+        fetch('/api/version')
+            .then(r => r.ok ? r.text() : Promise.reject())
+            .then(ver => {
+                document.getElementById('footer-version').textContent = ver;
+            })
+            .catch(() => {
+                document.getElementById('footer-version').textContent = 'Error';
+            });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Info</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <style>
+        :root {
+            --primary: #2196f3;
+            --accent: #ff9800;
+            --bg: #181818;
+            --surface: #232323;
+            --card: #222;
+            --text: #fff;
+            --text-secondary: #b0b0b0;
+            --success: #4caf50;
+            --error: #f44336;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        html,
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 40px auto 0 auto;
+            padding: 24px;
+            background: var(--surface);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            letter-spacing: 1px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 2em 1.2em 1.5em 1.2em;
+            margin-bottom: 2em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.2em;
+            font-weight: 500;
+        }
+
+        .gps-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            margin-bottom: 1.1em;
+            font-size: 1.1rem;
+        }
+
+        .gps-icon {
+            font-size: 1.5em;
+            margin-right: 0.7em;
+            width: 1.7em;
+            text-align: center;
+        }
+
+        .gps-label {
+            color: var(--text-secondary);
+            min-width: 110px;
+            text-align: left;
+        }
+
+        .gps-value {
+            font-weight: 600;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .mat-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 0.8em 2.2em;
+            font-size: 1.1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+            cursor: pointer;
+            margin-top: 1.5em;
+            transition: background 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .mat-btn:active {
+            background: var(--accent);
+            box-shadow: 0 1px 4px rgba(255, 152, 0, 0.18);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1.1rem;
+            margin-bottom: 2.2em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 0.7em;
+            background: var(--error);
+            box-shadow: 0 0 8px 2px var(--error);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px 2px var(--success);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 1.2em 0.5em 1em 0.5em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>GPS Info</h1>
+        <div class="status">
+            <span id="status-dot" class="dot"></span>
+            <span id="status-text">Checking...</span>
+        </div>
+        <!-- Navigation buttons under status -->
+        <div style="margin-bottom:2em;">
+            <button class="mat-btn" onclick="window.location.href='index.html'">
+                <span style="vertical-align:middle;">&#8962; Home</span>
+            </button>
+            <button class="mat-btn" onclick="window.location.href='hardware.html'">
+                <span style="vertical-align:middle;">&#9881;&#65039; Hardware Info</span>
+            </button>
+        </div>
+        <div class="card">
+            <div class="card-title">Current GPS Data</div>
+            <div class="gps-row">
+                <span class="gps-icon">&#128246;</span>
+                <span class="gps-label">Satellites</span>
+                <span class="gps-value" id="gps-sat">--</span>
+            </div>
+            <div class="gps-row">
+                <span class="gps-icon">&#128205;</span>
+                <span class="gps-label">Latitude</span>
+                <span class="gps-value" id="gps-lat">--</span>
+            </div>
+            <div class="gps-row">
+                <span class="gps-icon">&#128205;</span>
+                <span class="gps-label">Longitude</span>
+                <span class="gps-value" id="gps-lng">--</span>
+            </div>
+            <button id="see-on-map" class="mat-btn" style="display: none; margin: 0.5em 0 1em 0;">
+                <span style="vertical-align:middle;">&#128506; See on Map</span>
+            </button>
+            <div class="gps-row">
+                <span class="gps-icon">&#128200;</span>
+                <span class="gps-label">HDOP</span>
+                <span class="gps-value" id="gps-hdop">--</span>
+            </div>
+            <div class="gps-row">
+                <span class="gps-icon">&#11014;</span>
+                <span class="gps-label">Altitude</span>
+                <span class="gps-value" id="gps-alt">--</span>
+            </div>
+        </div>
+        <footer style="margin-top:2em;color:#b0b0b0;font-size:0.95em;">
+            <span id="footer-version">v1.x.x</span> &nbsp;|&nbsp; &copy; 2024-2025 <a
+                href="https://github.com/desiFish/GPS-CLOCK-V1"
+                style="color:#b0b0b0;text-decoration:underline;">desiFish</a>
+        </footer>
+    </div>
+    <script>
+        // Status indicator logic (same as index.html)
+        function updateStatus() {
+            fetch('/api/status').then(r => {
+                if (r.ok) {
+                    document.getElementById('status-dot').classList.add('online');
+                    document.getElementById('status-text').textContent = 'Online';
+                } else {
+                    document.getElementById('status-dot').classList.remove('online');
+                    document.getElementById('status-text').textContent = 'Offline';
+                }
+            }).catch(_ => {
+                document.getElementById('status-dot').classList.remove('online');
+                document.getElementById('status-text').textContent = 'Offline';
+            });
+        }
+        setInterval(updateStatus, 3000);
+        updateStatus();
+
+        // Handle map button visibility and click
+        const mapBtn = document.getElementById('see-on-map');
+        mapBtn.addEventListener('click', () => {
+            const lat = document.getElementById('gps-lat').textContent;
+            const lng = document.getElementById('gps-lng').textContent;
+            if (lat !== '--' && lng !== '--') {
+                window.open(`https://www.google.com/maps/?q=${lat},${lng}`, '_blank');
+            }
+        });
+
+        function fetchGps() {
+            fetch('/api/gps')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('gps-sat').textContent = data.satellites ?? '--';
+                    document.getElementById('gps-lat').textContent = data.lat !== undefined ? data.lat : '--';
+                    document.getElementById('gps-lng').textContent = data.lng !== undefined ? data.lng : '--';
+                    document.getElementById('gps-hdop').textContent = data.hdop !== undefined ? data.hdop : '--';
+                    document.getElementById('gps-alt').textContent = data.alt !== undefined ? data.alt : '--';
+
+                    // Show/hide map button based on valid coordinates
+                    mapBtn.style.display = (data.lat !== undefined && data.lng !== undefined) ? 'inline-block' : 'none';
+                })
+                .catch(() => {
+                    document.getElementById('gps-sat').textContent = '--';
+                    document.getElementById('gps-lat').textContent = '--';
+                    document.getElementById('gps-lng').textContent = '--';
+                    document.getElementById('gps-hdop').textContent = '--';
+                    document.getElementById('gps-alt').textContent = '--';
+                    mapBtn.style.display = 'none';
+                });
+        }
+        setInterval(fetchGps, 3000);
+        fetchGps();
+
+        // Footer version fetch
+        fetch('/api/version')
+            .then(r => r.ok ? r.text() : Promise.reject())
+            .then(ver => {
+                document.getElementById('footer-version').textContent = ver;
+            })
+            .catch(() => {
+                document.getElementById('footer-version').textContent = 'Error';
+            });
+    </script>
+</body>
+
+</html>

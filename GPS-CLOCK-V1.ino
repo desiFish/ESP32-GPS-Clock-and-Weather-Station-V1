@@ -48,18 +48,213 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <esp_sleep.h>
+#include <driver/rtc_io.h>
 #include <BH1750.h>
+
+#include <ArduinoJson.h>
 
 #include <TimeLib.h>
 #include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
+// --- Web server and filesystem includes ---
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
+#include <LittleFS.h>
 // Data Storage
 #include <Preferences.h>
 // Preference library object or instance
 Preferences pref;
+
+// Software version
+#define SWVersion "v1.2.0"
+
+// --- Async Web Server ---
+AsyncWebServer server(80);
+
+// GPS things
+static const int RXPin = 16, TXPin = 17; // GPS UART pins
+TinyGPSPlus gps;
+#define gpsPin 19        // GPS power control pin
+#define wifiButtonPin 26 // WiFi toggle button pin
+
+static bool wifiEnabled; // WiFi state variable (initialized from preferences)
+
+// --- Config state variables ---
+static bool buzzerOn = false;
+static bool displayOffInDark = false;
+// --- Config file paths ---
+const char *BUZZER_FILE = "/buzzer.json";
+const char *DISPLAY_DARK_FILE = "/display_dark.json";
+
+// --- Config load/save helpers ---
+void loadConfig()
+{
+  // Buzzer
+  if (LittleFS.exists(BUZZER_FILE))
+  {
+    File f = LittleFS.open(BUZZER_FILE, "r");
+    if (f)
+    {
+      DynamicJsonDocument doc(64);
+      if (deserializeJson(doc, f) == DeserializationError::Ok && doc["on"].is<bool>())
+        buzzerOn = doc["on"];
+      f.close();
+    }
+  }
+  // Display Off in Dark
+  if (LittleFS.exists(DISPLAY_DARK_FILE))
+  {
+    File f = LittleFS.open(DISPLAY_DARK_FILE, "r");
+    if (f)
+    {
+      DynamicJsonDocument doc(64);
+      if (deserializeJson(doc, f) == DeserializationError::Ok && doc["enabled"].is<bool>())
+        displayOffInDark = doc["enabled"];
+      f.close();
+    }
+  }
+}
+
+void saveBuzzerConfig()
+{
+  File f = LittleFS.open(BUZZER_FILE, "w");
+  if (f)
+  {
+    DynamicJsonDocument doc(16);
+    doc["on"] = buzzerOn;
+    serializeJson(doc, f);
+    f.close();
+  }
+}
+void saveDisplayDarkConfig()
+{
+  File f = LittleFS.open(DISPLAY_DARK_FILE, "w");
+  if (f)
+  {
+    DynamicJsonDocument doc(16);
+    doc["enabled"] = displayOffInDark;
+    serializeJson(doc, f);
+    f.close();
+  }
+}
+
+// Web server setup function
+void setupWebServer()
+{
+  // Serve static files from LittleFS
+  server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
+
+  // Add a handler for root path
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+    if (LittleFS.exists("/index.html")) {
+      request->send(LittleFS, "/index.html", "text/html");
+    } else {
+      request->send(404, "text/plain", "File not found! Please check if files are uploaded to LittleFS");
+    } });
+
+  // Status endpoint
+  server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(200, "text/plain", "OK"); });
+
+  // --- Buzzer API (GET/POST, persistent) ---
+  server.on("/api/buzzer", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+      DynamicJsonDocument doc(16);
+      doc["on"] = buzzerOn;
+      String out; serializeJson(doc, out);
+      request->send(200, "application/json", out); });
+  server.on("/api/buzzer", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              // Handle the request completion
+            },
+            NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+            {
+      if (len > 0) {
+        DynamicJsonDocument doc(32);
+        if (deserializeJson(doc, (const char*)data, len) == DeserializationError::Ok && doc["on"].is<bool>()) {
+          buzzerOn = doc["on"];
+          //digitalWrite(buzzerPin, buzzerOn ? HIGH : LOW);
+          saveBuzzerConfig();
+          DynamicJsonDocument resp(16);
+          resp["on"] = buzzerOn;
+          String out; serializeJson(resp, out);
+          request->send(200, "application/json", out);
+        } else {
+          request->send(400, "application/json", "{\"error\":\"Invalid data\"}");
+        }
+      } else {
+        request->send(400, "application/json", "{\"error\":\"No body\"}");
+      } });
+
+  // --- Display Off in Dark API (GET/POST, persistent) ---
+  server.on("/api/display/off-in-dark", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+      DynamicJsonDocument doc(16);
+      doc["enabled"] = displayOffInDark;
+      String out; serializeJson(doc, out);
+      request->send(200, "application/json", out); });
+  server.on("/api/display/off-in-dark", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              // Handle the request completion
+            },
+            NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+            {
+      if (len > 0) {
+        DynamicJsonDocument doc(32);
+        if (deserializeJson(doc, (const char*)data, len) == DeserializationError::Ok && doc["enabled"].is<bool>()) {
+          displayOffInDark = doc["enabled"];
+          saveDisplayDarkConfig();
+          DynamicJsonDocument resp(16);
+          resp["enabled"] = displayOffInDark;
+          String out; serializeJson(resp, out);
+          request->send(200, "application/json", out);
+        } else {
+          request->send(400, "application/json", "{\"error\":\"Invalid data\"}");
+        }
+      } else {
+        request->send(400, "application/json", "{\"error\":\"No body\"}");
+      } });
+
+  // --- GPS Info endpoint ---
+  server.on("/api/gps", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+      DynamicJsonDocument doc(128);
+      doc["satellites"] = gps.satellites.value();
+      doc["lat"] = gps.location.isValid() ? gps.location.lat() : JsonVariant().set(nullptr);
+      doc["lng"] = gps.location.isValid() ? gps.location.lng() : JsonVariant().set(nullptr);
+      doc["hdop"] = gps.hdop.isValid() ? gps.hdop.hdop() : JsonVariant().set(nullptr);
+      doc["alt"] = gps.altitude.isValid() ? gps.altitude.meters() : JsonVariant().set(nullptr);
+      String out; serializeJson(doc, out);
+      request->send(200, "application/json", out); });
+
+  // --- Version endpoint ---
+  server.on("/api/version", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(200, "text/plain", SWVersion); });
+
+  // --- System Details endpoint ---
+  server.on("/api/system/details", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+      DynamicJsonDocument doc(256);
+      doc["device"] = "ESP32";
+      doc["chipModel"] = ESP.getChipModel();
+      doc["chipRevision"] = ESP.getChipRevision();
+      doc["chipId"] = (uint32_t)ESP.getEfuseMac();
+      doc["macAddress"] = WiFi.macAddress();
+      doc["flashSize"] = ESP.getFlashChipSize();
+      doc["flashSpeed"] = ESP.getFlashChipSpeed();
+      doc["freeHeap"] = ESP.getFreeHeap();
+      doc["sketchSize"] = ESP.getSketchSize();
+      doc["cpuFreqMHz"] = getCpuFrequencyMhz();
+      doc["wifiRssi"] = WiFi.RSSI();
+      doc["ip"] = WiFi.localIP().toString();
+      doc["sdkVersion"] = ESP.getSdkVersion();
+      doc["coreVersion"] = ESP.getCoreVersion();
+      String out; serializeJson(doc, out);
+      request->send(200, "application/json", out); });
+}
 
 // your wifi name and password (saved in preference library)
 String ssid;
@@ -217,7 +412,6 @@ const char *PARAM_INPUT_2 = "pass";
 
 const String newHostname = "NiniClock"; // any name that you desire
 
-AsyncWebServer server(80);
 // Elegant OTA related task
 bool updateInProgress = false;
 unsigned long ota_progress_millis = 0;
@@ -234,11 +428,6 @@ U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, 18, 23, 5, U8X8_PIN_NONE);
 
 char week[7][12] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 char monthChar[12][12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
-// GPS things
-static const int RXPin = 16, TXPin = 17; // GPS UART pins
-TinyGPSPlus gps;
-#define gpsPin 19 // GPS power control pin
 
 // variables for holding time data globally
 byte days = 0, months = 0, hours = 0, minutes = 0, seconds = 0;
@@ -345,17 +534,67 @@ void onOTAEnd(bool success)
     u8g2.print("HAVE FAILED");
     u8g2.sendBuffer();
   }
-  // <Add your own code here>
+
   updateInProgress = false;
   delay(1000);
 }
 
 void setup()
 {
-  if (getCpuFrequencyMhz() != 160)
-    setCpuFrequencyMhz(160); // if not 160MHz, set to 160MHz
   Serial.begin(115200);
+  Serial.println("Start");
   Wire.begin();
+  delay(100); // Give I2C bus time to stabilize
+
+  // Initialize WiFi button pin
+  pinMode(wifiButtonPin, INPUT);
+
+  // --- LittleFS Init ---
+  if (!LittleFS.begin())
+  {
+    Serial.println("[ERROR] LittleFS Mount Failed");
+    Serial.println("Formatting LittleFS...");
+    if (LittleFS.format())
+    {
+      Serial.println("LittleFS formatted successfully");
+      if (!LittleFS.begin())
+      {
+        Serial.println("[ERROR] LittleFS Mount Failed even after formatting");
+        while (1)
+        {
+          delay(1000); // Prevent watchdog reset
+        }
+      }
+    }
+    else
+    {
+      Serial.println("[ERROR] LittleFS Format Failed");
+      while (1)
+      {
+        delay(1000); // Prevent watchdog reset
+      }
+    }
+  }
+  Serial.println("LittleFS mounted successfully!");
+
+  // Debug - List all files in LittleFS
+  Serial.println("\nListing files in LittleFS root:");
+  File root = LittleFS.open("/");
+  File file = root.openNextFile();
+  while (file)
+  {
+    String fileName = file.name();
+    size_t fileSize = file.size();
+    Serial.printf(" - File: %s, Size: %u bytes\n", fileName.c_str(), fileSize);
+    file = root.openNextFile();
+  }
+  delay(100);
+
+  loadConfig(); // <-- Load config from LittleFS before anything else
+
+  // Continue with normal setup if not going to deep sleep
+  if (getCpuFrequencyMhz() != 240)
+    setCpuFrequencyMhz(240); // if not 160MHz, set to 160MHz
 
   pinMode(gpsPin, OUTPUT);
   digitalWrite(gpsPin, HIGH); // you can connect the gps directly to 3.3V pin
@@ -364,9 +603,7 @@ void setup()
   pinMode(lcdEnablePin, OUTPUT);
   digitalWrite(lcdEnablePin, HIGH);
   pinMode(buzzerPin, OUTPUT);
-  digitalWrite(buzzerPin, HIGH);
-  delay(50);
-  digitalWrite(buzzerPin, LOW);
+
   Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
 
   analogWrite(lcdBrightnessPin, 250);
@@ -379,14 +616,42 @@ void setup()
   u8g2.drawLine(0, 31, 127, 31);
   u8g2.sendBuffer();
 
+  // Initialize I2C devices with proper delays
+  delay(100);   // Allow I2C bus to settle
+  Wire.begin(); // Reinitialize I2C bus
+  delay(100);   // Wait after reinit
+
   if (!lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE))
+  {
     errorMsgPrint("BH1750", "CANNOT FIND");
+    delay(100); // Wait between sensor inits
+  }
 
-  if (!pref.begin("database", false)) // open database
+  if (!pref.begin("database", false))
+  { // open database
     errorMsgPrint("DATABASE", "ERROR INITIALIZE");
+    delay(100); // Wait between inits
+  }
 
-  if (!bme.begin())
+  // Restore WiFi state from preferences (default to true if not set)
+  wifiEnabled = pref.getBool("wifi_enabled", true);
+
+  // Try BME280 initialization multiple times if needed
+  bool bmeFound = false;
+  for (int i = 0; i < 3; i++)
+  { // Try up to 3 times
+    if (bme.begin(0x76))
+    {
+      bmeFound = true;
+      break;
+    }
+    delay(100); // Wait before retrying
+  }
+
+  if (!bmeFound)
+  {
     errorMsgPrint("BME280", "CANNOT FIND");
+  }
 
   Serial.println("BME Ready");
 
@@ -397,10 +662,10 @@ void setup()
                   Adafruit_BME280::SAMPLING_X16,     // humidity
                   Adafruit_BME280::FILTER_X16,       // filter
                   Adafruit_BME280::STANDBY_MS_1000); // set delay between measurements
-  delay(1000);
+  delay(500);
 
   // wifi manager
-  if (true)
+  if (wifiEnabled)
   {
     bool wifiConfigExist = pref.isKey("ssid");
     if (!wifiConfigExist)
@@ -465,7 +730,7 @@ void setup()
 
     WiFi.mode(WIFI_STA);
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
-    WiFi.setHostname("NiniGPSClock");
+    WiFi.setHostname("GPSClockV1");
     WiFi.begin(ssid.c_str(), password.c_str());
     Serial.println("");
 
@@ -510,22 +775,25 @@ void setup()
       u8g2.print(WiFi.localIP());
       u8g2.sendBuffer();
 
-      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-                { request->send(200, "text/plain", "Hi! Please add "
-                                                   "/update"
-                                                   " on the above address."); });
+      // Setup web server routes first
+      setupWebServer(); // Setup all web server routes and handlers
 
+      Serial.println("HTTP server started");
+
+      // Setup OTA after routes
       ElegantOTA.begin(&server); // Start ElegantOTA
       // ElegantOTA callbacks
       ElegantOTA.onStart(onOTAStart);
       ElegantOTA.onProgress(onOTAProgress);
       ElegantOTA.onEnd(onOTAEnd);
 
+      // Start server last after all routes are set
       server.begin();
       Serial.println("HTTP server started");
       delay(3500);
     }
   }
+  pref.end();
   // Wifi related stuff END
 
   xTaskCreatePinnedToCore(
@@ -536,7 +804,6 @@ void setup()
       1,           // priority of the task
       &loop1Task,  // Task handle to keep track of created task
       0);          // pin task to core 0
-  pref.end();
 
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_7x14B_mr);
@@ -557,6 +824,54 @@ void loop1(void *pvParameters)
 {
   for (;;)
   {
+    byte count = 0;
+    // Handle WiFi button with debounce
+    if (digitalRead(wifiButtonPin) == HIGH)
+    { // Button pressed (active high)
+      while (digitalRead(wifiButtonPin) == HIGH)
+      {
+        count++;
+        delay(100);
+      }
+      if (count > 10)
+      {
+        if (!pref.begin("database", false))
+        { // open database
+          errorMsgPrint("DATABASE", "ERROR INITIALIZE");
+          delay(100); // Wait between inits
+        }
+        // Toggle WiFi state and save to preferences
+        wifiEnabled = !wifiEnabled;
+        pref.putBool("wifi_enabled", wifiEnabled);
+        if (wifiEnabled)
+        {
+          Serial.println("WiFi Enabled - Restarting ESP32...");
+          u8g2.clearBuffer();
+          u8g2.setFont(u8g2_font_luRS08_tr);
+          u8g2.setCursor(1, 20);
+          u8g2.print("CONNECTING WIFI");
+          u8g2.setCursor(1, 32);
+          u8g2.print("RESTARTING");
+          u8g2.sendBuffer();
+          pref.end();
+          delay(1500); // Give time for the serial message to be sent
+          ESP.restart();
+        }
+        else
+        {
+          // Stop web server
+          pref.end();
+          server.end();
+          Serial.println("Web server stopped");
+          // Disconnect WiFi
+          WiFi.disconnect(true);
+          WiFi.mode(WIFI_OFF);
+          Serial.println("WiFi Disabled");
+        }
+      }
+    }
+
+    // Original light sensor code
     if ((millis() - lastTime1) > timerDelay1)
     {
       lightMeter.configure(BH1750::ONE_TIME_HIGH_RES_MODE);
@@ -570,7 +885,7 @@ void loop1(void *pvParameters)
       Serial.println("LUXRaw: ");
       Serial.println(lux);
 
-      isDark = true && (lux <= 1); // Check if it's dark only if muteDark is enabled
+      isDark = true && (lux == 0); // Check if it's dark only if muteDark is enabled
 
       // Improved brightness control with smooth transitions
       if (true)
@@ -578,7 +893,10 @@ void loop1(void *pvParameters)
         byte targetBrightness;
         if (lux == 0)
         {
-          targetBrightness = 5;
+          if (displayOffInDark)
+            targetBrightness = 0; // Turn off display in dark if enabled
+          else
+            targetBrightness = 5; // Minimum brightness when very dark
         }
         else
         {
@@ -619,7 +937,8 @@ void loop1(void *pvParameters)
 
       lastTime2 = millis();
     }
-    if (!isDark && seconds == 0 && (true || true)) // Only check when seconds is 0
+
+    if (buzzerOn && !isDark && (seconds == 0)) // chime
     {
       switch (minutes)
       {
@@ -639,167 +958,204 @@ void loop1(void *pvParameters)
 
 // RUNS ON CORE 1
 void loop(void)
-{ // Main loop for display and GPS operations
+{                                      // Main loop for display and GPS operations
+  static bool lastDisplayState = true; // Track last display state
   if (true)
     ElegantOTA.loop();
-
-  while (gps.hdop.hdop() > 100 && gps.satellites.value() < 2)
-  { // if gps signal is weak
-    gpsInfo("Waiting for GPS...");
+  // No need to call server.loop() for ESPAsyncWebServer
+  bool displayOff = false; // temporary, change to actual variable
+  if (displayOffInDark)
+  {
+    displayOff = isDark;
   }
 
-  while (Serial1.available())
-  {
-    if (gps.encode(Serial1.read()))
-    { // process gps messages
-      // when TinyGPSPlus reports new data...
-      unsigned long age = gps.time.age();
-      if (age < 500)
-      {
-        // set the Time according to the latest GPS reading
-        setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
-        adjustTime(19800);
-      }
+  // Only execute display state changes when the state actually changes
+  if (!displayOff != lastDisplayState)
+  {                                 // State has changed
+    lastDisplayState = !displayOff; // Update state tracker
+
+    if (!displayOff)
+    {
+      // Turn display ON only when transitioning from OFF to ON
+      setCpuFrequencyMhz(240); // set to 160MHz when display is ON
+      digitalWrite(lcdEnablePin, HIGH);
+      delay(500); // wait for display to stabilize
+    }
+    else
+    {
+      // Turn display OFF only when transitioning from ON to OFF
+      u8g2.clearBuffer(); // clear display
+      u8g2.sendBuffer();
+      delay(500);                      // wait for display to stabilize
+      setCpuFrequencyMhz(80);          // reduce CPU speed to save power
+      digitalWrite(lcdEnablePin, LOW); // turn off display
     }
   }
 
-  days = day();
-  months = month();
-  years = year();
-  hours = hourFormat12();
-  minutes = minute();
-  seconds = second();
+  if (!displayOff)
+  {
+    while (gps.hdop.hdop() > 100 && gps.satellites.value() < 2)
+    { // if gps signal is weak
+      gpsInfo("Waiting for GPS...");
+    }
 
-  if (!updateInProgress)
-  { // if OTA update is not in progress
-    if (timeStatus() != timeNotSet)
-    { // if time is set
-      if (now() != prevDisplay)
-      { // update the display only if the time has changed
-        prevDisplay = now();
-        u8g2.clearBuffer();
-        u8g2.setFont(u8g2_font_pixzillav1_tr);
-        u8g2.setCursor(5, 15);
-        u8g2.print(temp2, 2);
-        u8g2.setFont(u8g2_font_threepix_tr);
-        u8g2.setCursor(40, 8);
-        u8g2.print("o");
-        u8g2.setFont(u8g2_font_pixzillav1_tr);
-        u8g2.setCursor(45, 15);
-        u8g2.print("C ");
-        u8g2.setCursor(64, 15);
-        u8g2.print(hum, 2);
-        u8g2.setCursor(100, 15);
-        u8g2.print("%rH");
-
-        u8g2.drawLine(0, 17, 127, 17);
-        u8g2.setFont(u8g2_font_7x14B_mr);
-        u8g2.setCursor(8, 30);
-        if (days < 10)
-          u8g2.print("0");
-        u8g2.print(days);
-        byte x = days % 10;
-        u8g2.setFont(u8g2_font_profont10_mr);
-        u8g2.setCursor(22, 25);
-
-        if (days == 11 || days == 12 || days == 13)
-          u8g2.print("th");
-        else if (x == 1)
-          u8g2.print("st");
-        else if (x == 2)
-          u8g2.print("nd");
-        else if (x == 3)
-          u8g2.print("rd");
-        else
-          u8g2.print("th");
-
-        u8g2.setFont(u8g2_font_7x14B_mr);
-        u8g2.setCursor(34, 30);
-        u8g2.print(monthChar[months - 1]);
-        u8g2.setCursor(58, 30);
-        u8g2.print(years);
-        u8g2.setCursor(102, 30);
-        u8g2.print(week[weekday() - 1]);
-
-        u8g2.drawLine(0, 31, 127, 31);
-
-        if (days == 6 && months == 9) // set this to ZERO if you don't want to show birthday message
-        {                             // special message on birthday
-          u8g2.setFont(u8g2_font_6x13_tr);
-          u8g2.setCursor(5, 43);
-          u8g2.print("HAPPY BIRTHDAY NINI!");
-
-          u8g2.setFont(u8g2_font_logisoso16_tr);
-          u8g2.setCursor(15, 63);
-          if (hours < 10)
-            u8g2.print("0");
-          u8g2.print(hours);
-          if (pulse == 0)
-            u8g2.print(":");
-          else
-            u8g2.print("");
-
-          u8g2.setCursor(41, 63);
-          if (minutes < 10)
-            u8g2.print("0");
-          u8g2.print(minutes);
-
-          if (pulse == 0)
-            u8g2.print(":");
-          else
-            u8g2.print("");
-
-          u8g2.setCursor(67, 63);
-          if (seconds < 10)
-            u8g2.print("0");
-          u8g2.print(seconds);
-
-          u8g2.setCursor(95, 63);
-          u8g2.print(isAM() ? "AM" : "PM");
-
-          u8g2.setFont(u8g2_font_waffle_t_all);
-          if (!isDark)                      // if mute on dark is not active (or false)
-            u8g2.drawUTF8(5, 54, "\ue271"); // symbol for hourly/half-hourly alarm
-
-          if (WiFi.status() == WL_CONNECTED)
-            u8g2.drawUTF8(5, 64, "\ue2b5"); // wifi-active symbol
-        }
-        else
+    while (Serial1.available())
+    {
+      if (gps.encode(Serial1.read()))
+      { // process gps messages
+        // when TinyGPSPlus reports new data...
+        unsigned long age = gps.time.age();
+        if (age < 500)
         {
-          // normal display
-          u8g2.setFont(u8g2_font_logisoso30_tn);
-          u8g2.setCursor(15, 63);
-          if (hours < 10)
-            u8g2.print("0");
-          u8g2.print(hours);
-          if (pulse == 0)
-            u8g2.print(":");
-          else
-            u8g2.print("");
-
-          u8g2.setCursor(63, 63);
-          if (minutes < 10)
-            u8g2.print("0");
-          u8g2.print(minutes);
-
-          u8g2.setFont(u8g2_font_tenthinnerguys_tu);
-          u8g2.setCursor(105, 42);
-          if (seconds < 10)
-            u8g2.print("0");
-          u8g2.print(seconds);
-
-          u8g2.setCursor(105, 63);
-          u8g2.print(isAM() ? "AM" : "PM");
-
-          u8g2.setFont(u8g2_font_waffle_t_all);
-          if (!isDark)                        // if mute on dark is not active (or false)
-            u8g2.drawUTF8(103, 52, "\ue271"); // symbol for hourly/half-hourly alarm
-
-          if (WiFi.status() == WL_CONNECTED)
-            u8g2.drawUTF8(112, 52, "\ue2b5"); // wifi-active symbol
+          // set the Time according to the latest GPS reading
+          setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
+          adjustTime(19800);
         }
-        u8g2.sendBuffer();
-        pulse = !pulse;
+      }
+    }
+
+    days = day();
+    months = month();
+    years = year();
+    hours = hourFormat12();
+    minutes = minute();
+    seconds = second();
+
+    if (!updateInProgress)
+    { // if OTA update is not in progress
+      if (timeStatus() != timeNotSet)
+      { // if time is set
+        if (now() != prevDisplay)
+        { // update the display only if the time has changed
+          prevDisplay = now();
+          u8g2.clearBuffer();
+          u8g2.setFont(u8g2_font_pixzillav1_tr);
+          u8g2.setCursor(5, 15);
+          u8g2.print(temp2, 2);
+          u8g2.setFont(u8g2_font_threepix_tr);
+          u8g2.setCursor(40, 8);
+          u8g2.print("o");
+          u8g2.setFont(u8g2_font_pixzillav1_tr);
+          u8g2.setCursor(45, 15);
+          u8g2.print("C ");
+          u8g2.setCursor(64, 15);
+          u8g2.print(hum, 2);
+          u8g2.setCursor(100, 15);
+          u8g2.print("%rH");
+
+          u8g2.drawLine(0, 17, 127, 17);
+          u8g2.setFont(u8g2_font_7x14B_mr);
+          u8g2.setCursor(8, 30);
+          if (days < 10)
+            u8g2.print("0");
+          u8g2.print(days);
+          byte x = days % 10;
+          u8g2.setFont(u8g2_font_profont10_mr);
+          u8g2.setCursor(22, 25);
+
+          if (days == 11 || days == 12 || days == 13)
+            u8g2.print("th");
+          else if (x == 1)
+            u8g2.print("st");
+          else if (x == 2)
+            u8g2.print("nd");
+          else if (x == 3)
+            u8g2.print("rd");
+          else
+            u8g2.print("th");
+
+          u8g2.setFont(u8g2_font_7x14B_mr);
+          u8g2.setCursor(34, 30);
+          u8g2.print(monthChar[months - 1]);
+          u8g2.setCursor(58, 30);
+          u8g2.print(years);
+          u8g2.setCursor(102, 30);
+          u8g2.print(week[weekday() - 1]);
+
+          u8g2.drawLine(0, 31, 127, 31);
+
+          if (days == 6 && months == 9) // set this to ZERO if you don't want to show birthday message
+          {                             // special message on birthday
+            u8g2.setFont(u8g2_font_6x13_tr);
+            u8g2.setCursor(5, 43);
+            u8g2.print("HAPPY BIRTHDAY NINI!");
+
+            u8g2.setFont(u8g2_font_logisoso16_tr);
+            u8g2.setCursor(15, 63);
+            if (hours < 10)
+              u8g2.print("0");
+            u8g2.print(hours);
+            if (pulse == 0)
+              u8g2.print(":");
+            else
+              u8g2.print("");
+
+            u8g2.setCursor(41, 63);
+            if (minutes < 10)
+              u8g2.print("0");
+            u8g2.print(minutes);
+
+            if (pulse == 0)
+              u8g2.print(":");
+            else
+              u8g2.print("");
+
+            u8g2.setCursor(67, 63);
+            if (seconds < 10)
+              u8g2.print("0");
+            u8g2.print(seconds);
+
+            u8g2.setCursor(95, 63);
+            u8g2.print(isAM() ? "AM" : "PM");
+
+            u8g2.setFont(u8g2_font_waffle_t_all);
+
+            if (buzzerOn && !isDark)          // if buzzer on and if mute on dark is not active (or false)
+              u8g2.drawUTF8(5, 54, "\ue271"); // symbol for hourly/half-hourly alarm
+
+            if (WiFi.status() == WL_CONNECTED)
+              u8g2.drawUTF8(5, 64, "\ue2b5"); // wifi-active symbol
+          }
+          else
+          {
+            // normal display
+            u8g2.setFont(u8g2_font_logisoso30_tn);
+            u8g2.setCursor(15, 63);
+            if (hours < 10)
+              u8g2.print("0");
+            u8g2.print(hours);
+            if (pulse == 0)
+              u8g2.print(":");
+            else
+              u8g2.print("");
+
+            u8g2.setCursor(63, 63);
+            if (minutes < 10)
+              u8g2.print("0");
+            u8g2.print(minutes);
+
+            u8g2.setFont(u8g2_font_tenthinnerguys_tu);
+            u8g2.setCursor(105, 42);
+            if (seconds < 10)
+              u8g2.print("0");
+            u8g2.print(seconds);
+
+            u8g2.setCursor(105, 63);
+            u8g2.print(isAM() ? "AM" : "PM");
+
+            u8g2.setFont(u8g2_font_waffle_t_all);
+
+            if (buzzerOn && !isDark)
+            {
+              u8g2.drawUTF8(103, 52, "\ue271");
+            } // symbol for hourly/half-hourly alarm
+
+            if (WiFi.status() == WL_CONNECTED)
+              u8g2.drawUTF8(112, 52, "\ue2b5"); // wifi-active symbol
+          }
+          u8g2.sendBuffer();
+          pulse = !pulse;
+        }
       }
     }
   }

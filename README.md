@@ -8,6 +8,7 @@
   [![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1)
   [![Issues](https://img.shields.io/github/issues/desiFish/ESP32-GPS-CLOCK-V1?style=for-the-badge)](https://github.com/desiFish/ESP32-GPS-CLOCK-V1/issues)
 
+<a href="https://www.flaticon.com/free-icons/clock" title="clock icons">Clock icons created by Those Icons - Flaticon</a>
   <p align="center">
     <i>A precision timepiece that syncs with satellites and monitors your environment! 🛰️</i>
   </p>
