@@ -464,6 +464,8 @@ const int BUZZER_CHANNEL = 1;
 const int PWM_FREQ = 2700; // default tone frequency
 const int PWM_RES = 8;     // 8-bit resolution
 
+float lux = 0;
+byte targetBrightness = 0;
 /**
  * @brief Callback when OTA update starts
  * Shows update status on LCD display
@@ -555,6 +557,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("Start");
   Wire.begin();
+  Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
 
   // Initialize WiFi button pin
   pinMode(wifiButtonPin, INPUT);
@@ -571,8 +574,6 @@ void setup()
   ledcAttachChannel(LCD_LIGHT, pwmFreq, pwmResolution, pwmChannel);
   ledcWrite(LCD_LIGHT, 150);
 
-  Serial1.begin(9600, SERIAL_8N1, RXPin, TXPin);
-
   ledcWrite(LCD_LIGHT, 250);
   u8g2.begin();
   u8g2.clearBuffer();
@@ -582,6 +583,7 @@ void setup()
   u8g2.print("GPS Clock V1");
   u8g2.drawLine(0, 31, 127, 31);
   u8g2.sendBuffer();
+  delay(1000);
 
   if (!lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE))
   {
@@ -605,11 +607,10 @@ void setup()
 
   // Set up oversampling and filter initialization
   bme.setSampling(Adafruit_BME280::MODE_FORCED,
-                  Adafruit_BME280::SAMPLING_X16,     // temperature
-                  Adafruit_BME280::SAMPLING_X16,     // pressure
-                  Adafruit_BME280::SAMPLING_X16,     // humidity
-                  Adafruit_BME280::FILTER_X16,       // filter
-                  Adafruit_BME280::STANDBY_MS_1000); // set delay between measurements
+                  Adafruit_BME280::SAMPLING_X16, // temperature
+                  Adafruit_BME280::SAMPLING_X16, // pressure
+                  Adafruit_BME280::SAMPLING_X16, // humidity
+                  Adafruit_BME280::FILTER_X16);  // filter
 
   // wifi manager
   // --- LittleFS Init ---
@@ -804,7 +805,7 @@ void setup()
   u8g2.setFont(u8g2_font_streamline_food_drink_t);
   u8g2.drawUTF8(80, 54, "U+4"); // birthday cake icon
   u8g2.sendBuffer();
-  delay(2000);
+  delay(1500);
   xTaskCreatePinnedToCore(
       loop1,       // Task function.
       "loop1Task", // name of task.
@@ -814,8 +815,6 @@ void setup()
       &loop1Task,  // Task handle to keep track of created task
       0);          // pin task to core 0
 }
-float lux = 0;
-byte targetBrightness = 0;
 
 /**
  * @brief Secondary loop running on Core 0
@@ -1098,26 +1097,35 @@ void loop(void)
     {
       prevEpoch = currentEpoch;
       u8g2.clearBuffer();
-      u8g2.setFont(u8g2_font_t0_11_tf);
-      u8g2.setCursor(2, 13);
-      u8g2.print(String(temperature, 1)); // Show temperature with 1 decimal place
-      u8g2.setFont(u8g2_font_threepix_tr);
-      u8g2.setCursor(28, 8);
-      u8g2.print("o");
-      u8g2.setFont(u8g2_font_t0_11_tf);
-      u8g2.setCursor(32, 13);
-      u8g2.print("C ");
-      String var = String(int(pressure)) + "hPa";        // Ensure font is set
-      int stringWidth = u8g2.getStrWidth(var.c_str());   // Get exact pixel width
-      u8g2.setCursor(((128 - stringWidth) / 2) + 3, 13); // Center using screen width
-      u8g2.print(var);
-      if (int(humidity) > 99)
-        u8g2.setCursor(90, 13);
+      u8g2.setFont(u8g2_font_t0_12_tf);
+      if (pressure == 0 && temperature == 0 && humidity == 0)
+      {
+        String var = "Updating...";
+        int stringWidth = u8g2.getStrWidth(var.c_str());
+        u8g2.setCursor(((128 - stringWidth) / 2), 13);
+        u8g2.print(var);
+      }
       else
-        u8g2.setCursor(96, 13);
-      u8g2.print(int(humidity));
-      u8g2.print("%rH");
-
+      {
+        u8g2.setCursor(2, 13);
+        u8g2.print(String(temperature, 1)); // Show temperature with 1 decimal place
+        u8g2.setFont(u8g2_font_threepix_tr);
+        u8g2.setCursor(28, 8);
+        u8g2.print("o");
+        u8g2.setFont(u8g2_font_t0_11_tf);
+        u8g2.setCursor(32, 13);
+        u8g2.print("C ");
+        String var = String(int(pressure)) + "hPa";        // Ensure font is set
+        int stringWidth = u8g2.getStrWidth(var.c_str());   // Get exact pixel width
+        u8g2.setCursor(((128 - stringWidth) / 2) + 3, 13); // Center using screen width
+        u8g2.print(var);
+        if (int(humidity) > 99)
+          u8g2.setCursor(90, 13);
+        else
+          u8g2.setCursor(96, 13);
+        u8g2.print(int(humidity));
+        u8g2.print("%rH");
+      }
       u8g2.drawLine(0, 17, 127, 17);
       u8g2.setFont(u8g2_font_samim_12_t_all);
       u8g2.setCursor(4, 29);
